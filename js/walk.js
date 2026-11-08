@@ -1,10 +1,12 @@
-// walk.js — TRUE first-person street mode (v5 rehaul, issue #23).
-// The person walking the city is YOU: there is no avatar and no "You" tag —
-// `view` IS the camera (eye height, yaw, pitch, head-bob). WASD/arrows or the
-// joystick move you, Shift runs, drag or click-to-lock the mouse to look
-// around, Q/E or left/right arrows turn, keys 1-4 emote (nearby [NPC]
-// residents answer back). Deliberate deviation from buildacountry's
-// third-person walker — documented in docs/WALK-REFERENCE.md.
+// walk.js — street mode v5.2 (issue #24): buildacountry-parity walk.
+// The person walking the city is YOU and you can SEE yourself: a visible
+// avatar (green kurta) walks the streets while the camera follows behind and
+// above. Dragging ORBITS the camera around you — the land itself is anchored
+// and never slides. While you walk forward the camera slowly swings back in
+// behind you; walls behind you pull the camera in. Calibrated against the
+// real buildacountry WALK source (reference/buildacountry): pitch clamp
+// 0.05–0.9, drag gain 0.008 touch / 0.005 mouse, auto-follow dt*1.6.
+// Distance/pitch defaults retuned to our smaller lot scale (5.4/7.4, 0.26).
 
 import { S, MAP, isWalkable, nearestWalkable } from './state.js';
 import { deedFor, RESIDENTS } from './owners.js';
@@ -12,23 +14,33 @@ import { cam, setZoom } from './iso.js';
 
 export const EMOTES = ['wave', 'namaste', 'diya', 'heart'];
 
-// the first-person camera state (the player has no rendered body)
+// you: position + heading + gait. `yaw` is the CAMERA orbit angle (where the
+// camera looks from), `ang` is which way your BODY faces. pitch = camera
+// down-tilt (0.05 nearly level … 0.9 high bird view), like the reference.
 export const view = {
   x: 24.5, y: 24.5,
-  yaw: Math.PI,          // facing south toward the chowk on entry
-  pitch: -0.04,          // a touch downward, like standing eyes
-  bob: 0,                // head-bob offset added to eye height
-  ph: 0,                 // gait phase (drives bob + chevron pulse)
+  yaw: Math.PI,          // camera starts behind you, you facing the chowk
+  ang: Math.PI,          // your body faces south toward the chowk on entry
+  pitch: 0.26,           // camera a little above and behind you, looking down
+  distCd: 0,             // smoothed camera distance (wall pull-in)
+  lookHold: 0,           // suppresses auto-follow for a beat after a drag
+  bob: 0,                // walk bounce (kept for the HUD runner icon)
+  ph: 0,                 // gait phase (drives the walk cycle)
   moving: false, run: false,
   emote: null, emoteUntil: 0,
 };
 
-// logical self (position mirror used by ui.js and the deed scan)
+// the avatar the camera follows — your body on the street
 export const player = {
   get x() { return view.x; }, set x(v) { view.x = v; },
   get y() { return view.y; }, set y(v) { view.y = v; },
-  moving: false, run: false,
-  emote: null, emoteUntil: 0,
+  get ang() { return view.ang; },
+  get ph() { return view.ph; },
+  get moving() { return view.moving; }, set moving(v) { view.moving = v; },
+  get run() { return view.run; },
+  get emote() { return view.emote; },
+  get emoteUntil() { return view.emoteUntil; },
+  type: 'kurta', col: '#3fae4e', skin: 1, scale: 1.06, name: 'You',
 };
 
 export function getView() { return view; }
@@ -58,7 +70,7 @@ export function enterWalk() {
   // place yourself on a sensible street near the map centre, facing the chowk
   const spot = nearestWalkable(Math.floor(MAP / 2), Math.floor(MAP / 2) - 2, 8) || { x: 24, y: 22 };
   view.x = spot.x + 0.5; view.y = spot.y + 0.5;
-  view.yaw = Math.PI; view.pitch = -0.04; view.bob = 0;
+  view.yaw = Math.PI; view.ang = Math.PI; view.pitch = 0.26; view.bob = 0; view.distCd = 0;
   spawnWalkers();
   document.body.classList.add('walking');
   syncWalkButtons();
@@ -121,15 +133,20 @@ export function setJoystick(x, y, active) { joy.x = x; joy.y = y; joy.active = a
 export function setRun(on) { runToggle = !!on; syncWalkButtons(); }
 export function isRunning() { return runToggle || !!keys.ShiftLeft || !!keys.ShiftRight; }
 
-// mouse/pointer look — fed by iso.js drag + pointer-lock
+// drag look — ORBIT the camera around yourself (the land stays anchored).
+// Gains calibrated from the buildacountry source: 0.008/px on touch,
+// 0.005/px on mouse; vertical gain ×0.7, pitch clamped to [0.05, 0.9].
+const touchLook = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
+const LOOK_S = touchLook ? 0.008 : 0.005;
 export function setLook(dx, dy) {
-  view.yaw += dx * 0.0031;
+  view.yaw -= dx * LOOK_S;
   if (view.yaw > Math.PI) view.yaw -= Math.PI * 2;
   if (view.yaw < -Math.PI) view.yaw += Math.PI * 2;
-  view.pitch = Math.max(-0.42, Math.min(0.42, view.pitch - dy * 0.0026));
+  view.pitch = Math.max(0.05, Math.min(0.9, view.pitch + dy * LOOK_S * 0.7));
+  view.lookHold = performance.now() / 1000 + 0.4; // pause auto-follow while looking
 }
 export function turnBy(d) {
-  view.yaw += d;
+  view.yaw -= d;
   if (view.yaw > Math.PI) view.yaw -= Math.PI * 2;
   if (view.yaw < -Math.PI) view.yaw += Math.PI * 2;
 }
@@ -180,34 +197,45 @@ export function update(dt, t) {
   if (!walkActive()) return;
   pollGamepad(dt);
   view.run = isRunning();
+  if (view.emote && t > view.emoteUntil) view.emote = null;
 
-  // desired move in local space: forward / strafe
+  // desired move in camera space: up = away from the camera (reference rule)
   let fwd = -joy.y - joy.gy, str = joy.x + joy.gx;
-  if (keys.KeyW) fwd -= 1;
-  if (keys.KeyS) fwd += 1;
-  if (keys.KeyD) str += 1;
-  if (keys.KeyA) str -= 1;
-  // arrows + Q/E turn (street feel: you swing your head, not strafe)
+  if (keys.KeyW || keys.ArrowUp) fwd -= 1;
+  if (keys.KeyS || keys.ArrowDown) fwd += 1;
+  if (keys.KeyD || keys.ArrowRight) str += 1;
+  if (keys.KeyA || keys.ArrowLeft) str -= 1;
+  // Q/E orbit the camera; arrows now walk (buildacountry parity)
   let turn = 0;
-  if (keys.ArrowLeft || keys.KeyQ) turn -= 1;
-  if (keys.ArrowRight || keys.KeyE) turn += 1;
-  if (turn) turnBy(turn * dt * 2.5);
-  if (joy.lx) view.yaw += joy.lx * dt * 2.8;
-  if (joy.ly) view.pitch = Math.max(-0.42, Math.min(0.42, view.pitch + joy.ly * dt * 2.0));
+  if (keys.KeyQ) turn -= 1;
+  if (keys.KeyE) turn += 1;
+  if (turn) turnBy(turn * dt * 2.2);
+  if (joy.lx) view.yaw -= joy.lx * dt * 2.8;
+  if (joy.ly) view.pitch = Math.max(0.05, Math.min(0.9, view.pitch + joy.ly * dt * 1.4));
 
   const mag = Math.hypot(fwd, str);
   view.moving = mag > 0.12;
   player.moving = view.moving;
   if (view.moving) {
     if (mag > 1) { fwd /= mag; str /= mag; }
+    // move relative to where the camera looks
     const fx = Math.sin(view.yaw), fy = -Math.cos(view.yaw);
     const rx = Math.cos(view.yaw), ry = Math.sin(view.yaw);
     const wx = fx * fwd + rx * str;
     const wy = fy * fwd + ry * str;
-    const speed = (view.run ? 4.4 : 2.1) * Math.min(1, mag * 1.4);
+    const speed = (view.run ? 5.4 : 3.0) * Math.min(1, mag * 1.4);
     moveWithCollision(view, wx * speed * dt, wy * speed * dt);
-    view.ph += dt * (view.run ? 13 : 9);
-    view.bob = Math.abs(Math.sin(view.ph)) * (view.run ? 0.055 : 0.04);
+    // your body swings to face where you move (dt*12, like the reference)
+    const ta = Math.atan2(wx, -wy);
+    let da = ta - view.ang; da = Math.atan2(Math.sin(da), Math.cos(da));
+    view.ang += da * Math.min(1, dt * 12);
+    // the camera slowly swings in behind you while you walk forward
+    if (fwd < -0.3 && t > (view.lookHold || 0)) {
+      let dy2 = view.ang - view.yaw; dy2 = Math.atan2(Math.sin(dy2), Math.cos(dy2));
+      view.yaw += dy2 * Math.min(1, dt * 1.6 * mag);
+    }
+    view.ph += dt * (view.run ? 11 : 7.5);
+    view.bob = Math.abs(Math.sin(view.ph)) * (view.run ? 0.05 : 0.035);
   } else {
     view.bob += (0 - view.bob) * Math.min(1, dt * 6);
     view.ph += dt * 1.2;
@@ -267,5 +295,5 @@ export function getWalkers() { return walkers; }
 export function teleportTo(x, y) {
   const s = nearestWalkable(Math.floor(x), Math.floor(y), 8) || { x: Math.floor(x), y: Math.floor(y) };
   view.x = s.x + 0.5; view.y = s.y + 0.5;
-  view.moving = false;
+  view.moving = false; view.distCd = 0;
 }

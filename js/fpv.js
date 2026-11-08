@@ -15,7 +15,7 @@ import { PAL, FACE_LIGHT, shade, mix, daylight, hazeCol } from './palette.js';
 import { resolveKnobs, drawPerson, drawCow, drawDoorPlate, drawTree } from './arts.js';
 import { hourOfDay, seasonOf } from './sim.js';
 import { getAgents } from './agents.js';
-import { getWalkers, getView } from './walk.js';
+import { getWalkers, getView, getPlayer } from './walk.js';
 import { deeds } from './owners.js';
 import { lensBegin, lensCompose, setLensBand, isLensOn } from './tiltshift.js';
 
@@ -34,33 +34,67 @@ function resizeFpv() {
 }
 
 // ---------------- camera ----------------
-const cam = { x: 24, y: 24, eye: 1.62, fx: 0, fy: 1, rx: -1, ry: 0, FL: 800, horizon: 400, yaw: 0 };
-function updateCam() {
+// v5.2 (issue #24): buildacountry-parity third-person orbit. The camera hangs
+// BEHIND and ABOVE the visible avatar, orbiting with drag while the land
+// stays anchored. Pitch is a real view tilt now (0.05–0.9), so the ground
+// plane is projected with a full pitch rotation — not an eye-height horizon.
+const cam = { x: 24, y: 24, eye: 5, fx: 0, fy: 1, rx: -1, ry: 0, FL: 800, horizon: 400, yaw: 0, pitch: 0.26, sinP: 0.26, cosP: 0.97, cd: 0 };
+let lastT = 0;
+function updateCam(t) {
   const v = getView();
-  cam.x = v.x; cam.y = v.y;
-  cam.eye = 1.62 + (v.bob || 0);
+  const portrait = H > W;
+  // orbit distance tuned to our lot scale (reference: 8.4 / 11.5 on bigger lots)
+  const want = portrait ? 8.2 : 6.2;
   cam.yaw = v.yaw;
-  cam.fx = Math.sin(v.yaw); cam.fy = -Math.cos(v.yaw);   // forward (yaw=0 faces north/−y)
+  cam.fx = Math.sin(v.yaw); cam.fy = -Math.cos(v.yaw);   // view forward (yaw=0 faces north/−y)
   cam.rx = Math.cos(v.yaw); cam.ry = Math.sin(v.yaw);    // right hand
   cam.FL = H * 1.04;
-  cam.horizon = H * 0.5 + Math.tan(v.pitch || 0) * cam.FL;
+  // wall behind you pulls the camera in (ray-march, reference rule)
+  const bx = -cam.fx, by = -cam.fy, cp = Math.cos(v.pitch);
+  let dist = 2.8;
+  const blocked = (px, py) => {
+    const tx = Math.floor(px), ty = Math.floor(py);
+    if (tx < 0 || ty < 0 || tx >= MAP || ty >= MAP) return true;
+    const g = gridAt(tx, ty);
+    if (g && (g.k === 'road' || g.k === 'bridge' || g.k === 'tree' || g.k === 'mango' || g.k === 'lamp' || g.k === 'flag' || g.k === 'park' || g.k === 'maidan' || g.k === 'wheat' || g.k === 'paddy' || g.k === 'flower' || g.k === 'mela')) return false;
+    return !!(S.grid[ty] && S.grid[ty][tx]);
+  };
+  while (dist < want && !blocked(v.x + bx * dist * cp, v.y + by * dist * cp)) dist += 0.25;
+  if (dist < want) dist = Math.max(2.8, dist - 0.6);
+  // fast in, slow out (reference smoothing)
+  cam.cd = cam.cd > 0 ? (dist < cam.cd ? dist : cam.cd + (dist - cam.cd) * Math.min(1, (t - lastT) * 3)) : dist;
+  lastT = t;
+  const lift = (want - cam.cd) * 0.35;   // closer camera looks down a bit more, so you still see yourself
+  // the camera hangs BEHIND you (bx,by) at distance cd, eye raised by the pitch
+  cam.x = v.x + bx * cam.cd * cp;
+  cam.y = v.y + by * cam.cd * cp;
+  cam.eye = 1.7 + Math.sin(v.pitch) * cam.cd + lift;
+  // the projection aims at your chest (1.45) — the reference lookAt rig, so
+  // you stay framed just below centre at ANY camera distance (issue #24)
+  cam.pitch = Math.atan2(cam.eye - 1.45, Math.max(0.7, cam.cd * cp));
+  cam.sinP = Math.sin(cam.pitch); cam.cosP = Math.cos(cam.pitch);
+  cam.horizon = H * 0.5 - Math.tan(cam.pitch) * cam.FL;
 }
 
 function project(wx, wy, wz) {
   const dx = wx - cam.x, dy = wy - cam.y;
   const d = dx * cam.fx + dy * cam.fy;
-  if (d < 0.12) return null;
+  if (d < 0.14) return null;
   const lat = dx * cam.rx + dy * cam.ry;
-  const s = cam.FL / d;
-  return { x: W / 2 + lat * s, y: cam.horizon - (wz - cam.eye) * s, s, d };
+  const h = wz - cam.eye;
+  const zc = d * cam.cosP - h * cam.sinP;   // depth along the tilted view axis
+  if (zc < 0.14) return null;
+  const s = cam.FL / zc;
+  return { x: W * 0.5 + lat * s, y: cam.horizon - (h / cam.cosP) * s, s, d };
 }
 // ground-plane point under a screen pixel (null when the ray misses the ground)
 function groundPoint(sx, sy) {
-  const dh = sy - cam.horizon;
-  if (dh < 1.5) return null;
-  const d = cam.FL * cam.eye / dh;
+  if (sy < cam.horizon + 1.5) return null;
+  // sy = horizon − (h/cosP)·FL/zc with h = −eye on the ground → solve zc
+  const zc = cam.eye * cam.FL / ((sy - cam.horizon) * cam.cosP);
+  const d = (zc - cam.eye * cam.sinP) / cam.cosP;
   if (d > 110) return null;
-  const lat = (sx - W / 2) * d / cam.FL;
+  const lat = (sx - W * 0.5) * zc / cam.FL;
   return { x: cam.x + cam.fx * d + cam.rx * lat, y: cam.y + cam.fy * d + cam.ry * lat };
 }
 
@@ -83,12 +117,20 @@ const stars = Array.from({ length: 130 }, (_, i) => {
   const a = Math.sin(i * 12.9898) * 43758.5453, b = Math.sin(i * 78.233) * 12543.98;
   return { x: a - Math.floor(a), y: b - Math.floor(b), r: 0.5 + ((a * 7) % 1) * 0.9 };
 });
+const skyGrad = { key: '', ctx: null, g: null };
 function drawSky(t, hour, dl) {
   const [top, bot] = skyCols(hour);
-  const g = ctx.createLinearGradient(0, 0, 0, Math.max(4, cam.horizon));
-  g.addColorStop(0, top); g.addColorStop(1, bot);
+  // cached gradient (rebuild only when the hour bucket or horizon moves)
+  const hz = Math.max(4, cam.horizon);
+  const sk = `${Math.round(hour * 4)}|${Math.round(hz / 8)}`;
+  let g = skyGrad.g;
+  if (!g || skyGrad.key !== sk || skyGrad.ctx !== ctx) {
+    g = ctx.createLinearGradient(0, 0, 0, hz);
+    g.addColorStop(0, top); g.addColorStop(1, bot);
+    skyGrad.key = sk; skyGrad.ctx = ctx; skyGrad.g = g;
+  }
   ctx.fillStyle = g;
-  ctx.fillRect(0, 0, W, Math.max(0, cam.horizon) + 1);
+  ctx.fillRect(0, 0, W, hz + 1);
   // stars fade in with darkness
   const starA = Math.max(0, Math.min(1, (0.62 - dl.amb) / 0.3));
   if (starA > 0.02) {
@@ -141,7 +183,7 @@ function groundBounds() {
     minY = Math.min(minY, gp.y); maxY = Math.max(maxY, gp.y);
   }
   if (!any) { minX = cam.x - 10; maxX = cam.x + 10; minY = cam.y - 10; maxY = cam.y + 10; }
-  const R = 28;
+  const R = 30;
   const x0 = Math.max(0, Math.floor(Math.max(minX, cam.x - R)) - 1);
   const x1 = Math.min(MAP - 1, Math.ceil(Math.min(maxX, cam.x + R)) + 1);
   const y0 = Math.max(0, Math.floor(Math.max(minY, cam.y - R)) - 1);
@@ -165,7 +207,7 @@ function drawGround(t, dl, season) {
     for (let x = bb.x0; x <= bb.x1; x++) {
       // cheap reject: tile centre depth + screen bounds
       const c = project(x + 0.5, y + 0.5, 0);
-      if (!c || c.d > 34) continue;
+      if (!c || c.d > 40) continue;
       const m = 46 * c.s;
       if (c.x < -m - 60 || c.x > W + m + 60) continue;
       const tv = S.terrain[y] && S.terrain[y][x];
@@ -661,10 +703,15 @@ function treeSpriteSync(seed, season) {
   return s;
 }
 function personSprite(a) {
+  // v5.2: drawPerson is a plan-mode pixel sketch (~13px tall) — render it
+  // enlarged inside the sprite canvas or street people are invisible specks
   const key = `p|${a.type}|${a.col}|${a.skin}|${a.pot ? 1 : 0}`;
   let s = sprites.get(key);
   if (!s) {
-    s = mkSprite(48, 68, (c) => drawPerson(c, 24, 63, { ...a, scale: 1, ph: 0.7, emote: null }, 0.85));
+    s = mkSprite(96, 184, (c) => {
+      c.translate(48, 172); c.scale(9.8, 9.8);
+      drawPerson(c, 0, 0, { ...a, scale: 1, ph: 0.7, emote: null }, 0);
+    });
     sprites.set(key, s);
   }
   return s;
@@ -673,7 +720,10 @@ function cowSprite(seed) {
   const key = 'cow' + (seed % 3);
   let s = sprites.get(key);
   if (!s) {
-    s = mkSprite(64, 48, (c) => drawCow(c, 32, 40, 0, seed % 3));
+    s = mkSprite(128, 96, (c) => {
+      c.translate(64, 88); c.scale(6, 6);
+      drawCow(c, 0, 0, 0, seed % 3);
+    });
     sprites.set(key, s);
   }
   return s;
@@ -700,7 +750,7 @@ function collectBuildings(bb, env) {
       const g = S.grid[y] && S.grid[y][x];
       if (!g) continue;
       const c = project(x + 0.5, y + 0.5, 0);
-      if (!c || c.d > 32) continue;
+      if (!c || c.d > 38) continue;
       if (g.k === 'tree' || g.k === 'mango') {
         drawables.push({ type: 'tree', d: c.d, wx: x + 0.5, wy: y + 0.5, seed: g.seed, season: env.season });
       } else if (g.k === 'lamp') {
@@ -721,20 +771,24 @@ function collectBuildings(bb, env) {
 function collectAgents(env) {
   for (const a of getAgents()) {
     const c = project(a.x, a.y, 0);
-    if (!c || c.d > 27) continue;
+    if (!c || c.d > 30) continue;
     if (a.kind === 'vehicle' && a.vkind !== 'cycle' && a.vkind !== 'bullock') drawables.push({ type: 'veh', d: c.d, a });
-    else if (a.kind === 'vehicle' && a.vkind === 'bullock') drawables.push({ type: 'bill', d: c.d, wx: a.x, wy: a.y, spr: cowSprite(2), h: 0.46 });
-    else if (a.kind === 'vehicle') drawables.push({ type: 'bill', d: c.d, wx: a.x, wy: a.y, spr: personSprite({ type: 'kurta', col: a.riderCol || '#37474f', skin: 1 }), h: 0.58 });
-    else if (a.kind === 'cow') drawables.push({ type: 'bill', d: c.d, wx: a.x, wy: a.y, spr: cowSprite(a.ph || 1), h: 0.44 });
-    else drawables.push({ type: 'bill', d: c.d, wx: a.x, wy: a.y, spr: personSprite(a), h: 0.6 * (a.scale || 1) });
+    else if (a.kind === 'vehicle' && a.vkind === 'bullock') drawables.push({ type: 'bill', d: c.d, wx: a.x, wy: a.y, spr: cowSprite(2), h: 0.72 });
+    else if (a.kind === 'vehicle') drawables.push({ type: 'bill', d: c.d, wx: a.x, wy: a.y, spr: personSprite({ type: 'kurta', col: a.riderCol || '#37474f', skin: 1 }), h: 1.0 });
+    else if (a.kind === 'cow') drawables.push({ type: 'bill', d: c.d, wx: a.x, wy: a.y, spr: cowSprite(a.ph || 1), h: 0.62 });
+    else drawables.push({ type: 'bill', d: c.d, wx: a.x, wy: a.y, spr: personSprite(a), h: 1.3 * (a.scale || 1) });
   }
 }
 function collectWalkers(env) {
   for (const w of getWalkers()) {
     const c = project(w.x, w.y, 0);
-    if (!c || c.d > 24) continue;
+    if (!c || c.d > 28) continue;
     drawables.push({ type: 'walker', d: c.d, w, spr: personSprite(w) });
   }
+  // YOU — the visible walker the camera follows (issue #24)
+  const pl = getPlayer();
+  const pc = project(pl.x, pl.y, 0);
+  if (pc && pc.d > 0.4 && pc.d < 30) drawables.push({ type: 'walker', d: pc.d, w: pl, spr: personSprite(pl), isPlayer: true });
 }
 function drawLamp(dr, env) {
   const { dl } = env;
@@ -826,13 +880,17 @@ function drawWalker(dr, env) {
   const t = env.t;
   const p = project(w.x, w.y, 0);
   if (!p) return;
-  const hpx = 0.62 * (w.scale || 1) * p.s;
+  const bobP = w.moving ? Math.abs(Math.sin(w.ph || 0)) * 0.05 : 0; // walk bounce
+  // v5.2 fix: drawBillSprite takes WORLD units (it multiplies by p.s itself) —
+  // the old code passed pixels here, double-scaling every street person
+  const worldH = 1.7 * (w.scale || 1) * (1 + bobP); // sprite canvas ≈ 1.25-lot person
+  const hpx = worldH * p.s;
   if (hpx < 2.5) return;
   ctx.fillStyle = 'rgba(0,0,0,.17)';
   ctx.beginPath(); ctx.ellipse(p.x, p.y, hpx * 0.14, hpx * 0.05, 0, 0, 7); ctx.fill();
-  drawBillSprite(p, dr.spr, hpx, 0.6);
-  if (p.d < 8.5) {
-    drawTag(p.x, p.y - hpx - 9, w.name || '');
+  drawBillSprite(p, dr.spr, worldH, 0.6);
+  if (dr.isPlayer || p.d < 8.5) {
+    drawTag(p.x, p.y - hpx - 9, dr.isPlayer ? 'You' : (w.name || ''));
   }
   if (w.emote) emoteBubble(p.x, p.y - hpx - 26, w.emote, t);
 }
@@ -889,20 +947,23 @@ function emoteBubble(x, y, kind, t) {
   ctx.restore();
 }
 
-// heading chevron on the ground ahead of you (you are the camera; this is
-// the one orientation aid the issue asks for)
-function chevron(v) {
-  const a = 0.3 + 0.25 * Math.abs(Math.sin(v.ph || 0));
-  const fx = cam.fx, fy = cam.fy, rx = cam.rx, ry = cam.ry;
-  const px = v.x + fx * 0.62, py = v.y + fy * 0.62;
-  quad([
-    [px + rx * 0.14, py + ry * 0.14, 0.012],
-    [px - rx * 0.14, py - ry * 0.14, 0.012],
-    [v.x + fx * 1.02, v.y + fy * 1.02, 0.012],
-  ], `rgba(255,176,58,${a})`);
-}
-
 // ---------------- post passes ----------------
+// one cached radial glow sprite per colour — replaces hundreds of per-frame
+// createRadialGradient calls (the single biggest street-mode frame cost)
+const glowSprites = new Map();
+function glowSprite(col) {
+  let s = glowSprites.get(col);
+  if (!s) {
+    if (glowSprites.size > 28) { glowSprites.clear(); } // flicker variants recycle
+    s = mkSprite(128, 128, (c) => {
+      const rg = c.createRadialGradient(64, 64, 0, 64, 64, 64);
+      rg.addColorStop(0, col); rg.addColorStop(1, 'rgba(0,0,0,0)');
+      c.fillStyle = rg; c.fillRect(0, 0, 128, 128);
+    });
+    glowSprites.set(col, s);
+  }
+  return s;
+}
 function nightPass(dl) {
   ctx.fillStyle = `rgba(10,14,40,${Math.max(0, (1 - dl.amb) * 0.42)})`;
   ctx.fillRect(0, 0, W, H);
@@ -910,20 +971,26 @@ function nightPass(dl) {
   const step = Math.max(1, Math.ceil(lights.length / 240));
   for (let i = 0; i < lights.length; i += step) {
     const l = lights[i];
-    const rg = ctx.createRadialGradient(l.x, l.y, 0, l.x, l.y, l.r);
-    rg.addColorStop(0, l.c); rg.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = rg;
-    ctx.beginPath(); ctx.arc(l.x, l.y, l.r, 0, 7); ctx.fill();
+    const spr = glowSprite(l.c);
+    ctx.drawImage(spr, l.x - l.r, l.y - l.r, l.r * 2, l.r * 2);
   }
   ctx.globalCompositeOperation = 'source-over';
 }
+const hazeGrads = new Map(); // key → {ctx, g}
 function horizonHaze(dl) {
   const c = hazeCol(dl);
-  const g = ctx.createLinearGradient(0, cam.horizon - H * 0.13, 0, cam.horizon + H * 0.09);
-  g.addColorStop(0, rgbaOf(c, 0));
-  g.addColorStop(0.55, rgbaOf(c, 0.5));
-  g.addColorStop(1, rgbaOf(c, 0));
-  ctx.fillStyle = g;
+  const hk = `${Math.round(hourOfDay() * 4)}|${Math.round(cam.horizon / 8)}`;
+  let e = hazeGrads.get(hk);
+  if (!e || e.ctx !== ctx) {
+    const g = ctx.createLinearGradient(0, cam.horizon - H * 0.13, 0, cam.horizon + H * 0.09);
+    g.addColorStop(0, rgbaOf(c, 0));
+    g.addColorStop(0.55, rgbaOf(c, 0.5));
+    g.addColorStop(1, rgbaOf(c, 0));
+    e = { ctx, g };
+    if (hazeGrads.size > 24) hazeGrads.clear();
+    hazeGrads.set(hk, e);
+  }
+  ctx.fillStyle = e.g;
   ctx.fillRect(0, cam.horizon - H * 0.13, W, H * 0.23);
 }
 let rainDrops = null;
@@ -985,13 +1052,18 @@ export function fpvRender(now) {
   if (!vctx || !S.grid.length) return;
   const t = now / 1000;
   const hour = hourOfDay();
-  const dl = daylight(hour);
+  const dl0 = daylight(hour);
+  // v5.2: the streets stay readable after dark — raised ambient floor in walk
+  // mode only (plan view keeps the real IST mood untouched)
+  const dl = dl0.night ? { ...dl0, amb: Math.max(dl0.amb, 0.46) } : dl0;
   const season = seasonOf(S.day).id;
   const festival = S.festival ? S.festival.id : null;
   lights.length = 0;
-  ctx = lensBegin(W, H, dpr) || vctx;
-  updateCam();
-  const v = getView();
+  // v5.2: the toy-town lens stays in PLAN mode — street level draws straight
+  // to the canvas (crisper, and skips three full-frame blur round trips)
+  const lens = isLensOn() && S.mode === 'plan';
+  ctx = lens ? (lensBegin(W, H, dpr) || vctx) : vctx;
+  updateCam(t);
 
   drawSky(t, hour, dl);
   drawables.length = 0;
@@ -999,7 +1071,6 @@ export function fpvRender(now) {
   // ground-key colours (parks, crops, maidans) painted in the ground pass
   drawGroundSpecials(bb, dl, season);
   drawGround(t, dl, season);
-  chevron(v);
   const env = { t, dl, season, festival, night: dl.night };
   env.deedMap = new Map();
   for (const d of deeds()) for (const kind of ['home', 'shop']) {
@@ -1013,7 +1084,7 @@ export function fpvRender(now) {
   drawables.sort((a, b) => b.d - a.d);
   for (const dr of drawables) {
     if (dr.type === 'box') drawBuilding3D({ ...dr, t }, env);
-    else if (dr.type === 'tree') { const p = project(dr.wx, dr.wy, 0); if (p) { drawTreeShadow(dr.wx, dr.wy); drawBillSprite(p, treeSpriteSync(dr.seed, dr.season), 1.32); } }
+    else if (dr.type === 'tree') { const p = project(dr.wx, dr.wy, 0); if (p) { drawTreeShadow(dr.wx, dr.wy); drawBillSprite(p, treeSpriteSync(dr.seed, dr.season), 2.0); } }
     else if (dr.type === 'bill') { const p = project(dr.wx, dr.wy, 0); if (p && dr.h > 0) drawBillSprite(p, dr.spr, dr.h); }
     else if (dr.type === 'lamp') drawLamp(dr, env);
     else if (dr.type === 'flag') drawFlag(dr, env);
@@ -1024,8 +1095,10 @@ export function fpvRender(now) {
   if (dl.night || dl.amb < 0.6) nightPass(dl);
   if (festival) festivalPass(t, festival, dl);
   weather(season, t, dl);
-  if (isLensOn()) setLensBand(Math.max(0.24, Math.min(0.78, cam.horizon / H)), 0.42, Math.sin(cam.yaw) * 0.03);
-  lensCompose(vctx, { night: dl.night });
+  if (lens) {
+    setLensBand(Math.max(0.24, Math.min(0.78, cam.horizon / H)), 0.42, Math.sin(cam.yaw) * 0.03);
+    lensCompose(vctx, { night: dl.night });
+  }
 }
 // parks, maidans, crops and mela grounds — painted flat in the ground pass
 function drawGroundSpecials(bb, dl, season) {
@@ -1034,7 +1107,7 @@ function drawGroundSpecials(bb, dl, season) {
       const g = S.grid[y] && S.grid[y][x];
       if (!g) continue;
       const c = project(x + 0.5, y + 0.5, 0);
-      if (!c || c.d > 32) continue;
+      if (!c || c.d > 36) continue;
       const L = LOOKS[g.k];
       if (!L) continue;
       if (L.roofType === 'ground') {

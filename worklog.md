@@ -626,3 +626,52 @@ trace of one rgb(0,0,0) fill located the bug in minutes after an hour of
 looking at the wrong layer. And: runtime crashes can hide behind time-of-day —
 QA must sweep at least dawn/day/dusk/night, not just the hour you happen to
 be in.
+
+---
+
+## 2026-11-09 · v5.2 — anchored third-person walk (issue #24)
+
+Owner reports from live mobile testing: *"as soon as we go to walk mode our
+drag is changing the land too it's not fixed to its place"* + *"the visuals
+should look like this and smoothest rendering"* (with buildacountry walk-mode
+screenshots: the player's own character seen from behind, bright low-poly
+streets). Diagnosis: v5.1's skull-mounted camera left nothing anchored on
+screen, so drag yaw/pitch read as dragging the land itself. The reference the
+owner keeps pointing at walks as **third person** — you see your own walker.
+
+Rebuilt against the real `reference/buildacountry` WALK source (bundled JS,
+decompiled line-by-line): visible green-kurta avatar (slot "You"), camera
+behind + above, drag = orbit only (`yaw -= dx × 0.008 phone / 0.005 desktop`,
+pitch 0.05–0.9), auto-follow (`dt × 1.6`) swings the camera back behind you
+while walking forward, wall pull-in ray-march with fast-in/slow-out smoothing
++ lift ×0.35, projection pitch derived from the look-at (chest 1.45) so the
+avatar stays framed at ANY camera distance. Pointer-lock FPS look removed.
+Tilt-shift lens gated to plan mode (the reference walk is a clean render).
+Night readability: walk-mode ambient floor 0.46 (real IST clock untouched).
+
+**Bugs found & fixed while rebuilding** (each was invisible until the camera
+could actually SEE the street population):
+1. `drawWalker` passed a pixel height into `drawBillSprite` (which takes world
+   units) — every street person was double-scaled to off-screen giants
+   (logged a 104,362 px drawImage). Person sprites now world-scaled (~1.25 lots).
+2. `personSprite`/`cowSprite` drew the plan-mode ~13 px sketches raw — street
+   people were sub-pixel specks. Now rendered enlarged (×2 res canvases).
+3. Perf: memoised `mix`/`shade` (thousands of hex-string builds per frame,
+   the p90 spike), cached sky/haze gradients, one cached radial glow sprite
+   per night-light colour instead of hundreds of createRadialGradient calls.
+   Walk fps under SwiftShader: p50+p75 = 16.7 ms (60), avg 20.4 ms.
+4. The concurrent session's `b663437` had already fixed the `agents.js`
+   const-reassign loop-kill; verified present before my push.
+
+Verification (agent-browser, headless Chrome, IST clock real): enter walk →
+avatar + shadow + "You" tag centred; 300 px drag right then left → the world
+orbits around the anchored avatar (CBD·S → CBD·SE → back), zero land slide;
+two W-holds → you walk, NPCs stroll past, camera swings in behind; exit walk
+→ plan camera restored intact; `node --check` clean on all 18 modules; zero
+console errors. Evidence: docs/qa-issue24-*.png. Issue #24 closed with these.
+
+Lesson: "the drag moves the land" was never an input bug — it was a camera
+with no anchor. When a player says the world "isn't fixed to its place",
+look for what IS fixed on their screen; a third-person body is the anchor an
+FPS-style rig can never provide. And billboards must agree with the projection:
+pass world units into a renderer that multiplies by scale, never pixels.

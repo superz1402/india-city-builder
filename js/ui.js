@@ -515,7 +515,7 @@ function initWalkControls() {
     const hint = $('look-hint');
     if (hint) { hint.hidden = false; clearTimeout(initWalkControls.hintT); initWalkControls.hintT = setTimeout(() => { hint.hidden = true; }, 7000); }
     const phone = matchMedia('(pointer: coarse)').matches || window.innerWidth < 720;
-    pushNotice(phone ? 'You are on the street — joystick to walk, drag to look around.' : 'You are on the street. WASD to walk, Q/E or arrows to turn, Shift to run. Click to lock the mouse and look; 1-4 to emote.', 'good');
+    pushNotice(phone ? 'You are on the street — joystick to walk, drag to orbit the camera.' : 'You are on the street. WASD or arrows to walk, Q/E to swing the camera, Shift to run, drag to orbit the camera; 1-4 to emote.', 'good');
   });
   $('btn-exit-walk').addEventListener('click', () => { sfx.click(); exitWalk(); });
   $('btn-run').addEventListener('click', () => {

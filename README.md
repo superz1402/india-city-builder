@@ -24,10 +24,12 @@ Standard Time clock**.
 - **Door plates (v3)** — walk the streets and read ownership at the doors: green ACQUIRED
   nameplates carry the owner's name; cream TO-LET boards mark what's still available. The map
   view shows green/amber doorstep dots; tap any door for its deed card.
-- **Walk mode — true first person (v5)** — press Walk and **you are the walker**: no puppet,
-  the camera lives where you stand (WASD/arrows or the on-screen joystick, Shift/RUN to jog,
-  drag to look around, gamepad support, emotes with name tags, and a marigold heading chevron
-  on the ground). "You + N nearby", just like the reference — minus the puppet.
+- **Walk mode — you are the walker (v5.2)** — press Walk and **the green kurta on the street is
+  you**: the camera follows behind and above, buildacountry-style. Drag to **orbit the camera
+  around yourself** — the city stays anchored, it never slides (issue #24). Walk forward and the
+  camera slowly swings back in behind you; walls pull it in and ease it back out. WASD/arrows or
+  the joystick move you, Q/E swings the camera, Shift/RUN to jog, gamepad support, emotes with
+  name tags, pocket map. "You + N nearby", just like the reference — because you can SEE you.
 - **A world rebuilt (v5)** — warm dust ground with banked water, contact shadows under every
   structure, framed windows that glow warm at night, chhajjas / parapets / rooftop tanks /
   striped awnings / hand-painted signboards, direction-aware roads (kerbs, lane dashes, zebra
@@ -75,7 +77,7 @@ Standard Time clock**.
 | Zoom | scroll / +− buttons | pinch / +− buttons |
 | Build | click card → click map | tap card → tap map |
 | Inspect / owner / remove | click placed building | tap placed building |
-| **Walk (true first person, v5.1)** | Walk button → you ARE the camera: WASD move, Q/E or ←/→ turn, Shift run, drag or click-to-lock look, 1-4 emotes, pocket map + compass | Walk button → joystick move, drag look, RUN + emote buttons, pocket map |
+| **Walk (v5.2, you are the walker)** | Walk button → you see your walker from behind: WASD/arrows move, Q/E swings the camera, Shift run, drag orbits the camera (land stays anchored), 1-4 emotes, pocket map | Walk button → joystick move, drag orbits the camera, RUN + emote buttons, pocket map |
 | Visit a resident | search name or People & homes panel | same |
 | Pause / speed | Space or the HUD button | HUD button |
 

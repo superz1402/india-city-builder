@@ -35,7 +35,20 @@ export const FACE_LIGHT = { S: 1.0, E: 0.9, W: 0.72, N: 0.62, T: 1.07 };
 // hex AND the 'rgb(r,g,b)' strings that mix()/shade() themselves return
 // (issue #25: parseInt on 'rgb(...)' used to yield NaN → pure-black walls
 // in first-person view all day). parseCol below is the one shared parser.
+// v5.2 (issue #24): memoized — the street renderer calls these thousands of
+// times per frame (once per ground tile); re-parsing strings every call was
+// the biggest p90 frame-time spike on mobile.
+const _shadeCache = new Map();
 export function shade(col, f) {
+  const key = col + '|' + Math.round(f * 40);
+  let v = _shadeCache.get(key);
+  if (v !== undefined) return v;
+  v = _shadeRaw(col, f);
+  if (_shadeCache.size > 4000) _shadeCache.clear();
+  _shadeCache.set(key, v);
+  return v;
+}
+function _shadeRaw(col, f) {
   const [r0, g0, b0] = parseCol(col);
   let r = r0, g = g0, b = b0;
   if (f <= 1) {
@@ -48,7 +61,17 @@ export function shade(col, f) {
 }
 
 // mix two hex/rgb colors by t (0 = a, 1 = b) — used for distance haze
+const _mixCache = new Map();
 export function mix(a, b, t) {
+  const key = a + '|' + b + '|' + Math.round(t * 48);
+  let v = _mixCache.get(key);
+  if (v !== undefined) return v;
+  v = _mixRaw(a, b, t);
+  if (_mixCache.size > 4000) _mixCache.clear();
+  _mixCache.set(key, v);
+  return v;
+}
+function _mixRaw(a, b, t) {
   const pa = parseCol(a), pb = parseCol(b);
   const r = Math.round(pa[0] + (pb[0] - pa[0]) * t);
   const g = Math.round(pa[1] + (pb[1] - pa[1]) * t);

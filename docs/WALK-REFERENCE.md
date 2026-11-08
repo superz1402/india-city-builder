@@ -53,32 +53,43 @@ So the deed book ships exactly **four** citizens, each named with a literal
 pretend people in the world. Anyone can be added in code — keep the `[NPC]`
 tag so visitors never mistake scripted residents for real players.
 
-## v5 deviation — TRUE FIRST PERSON (owner directive, issue #23)
+## v5.2 — back to buildacountry parity: the visible walker (issue #24)
 
-> "I need first person view meaning the person walking in city should be me"
+v5 shipped a skull-mounted camera (no body) per the "first person" reading of
+issue #23. Live testing on mobile showed two things:
 
-## v5 — TRUE first person (issue #23, deliberate deviation from buildacountry)
+> "The viewer mode looks fine but as soon as we go to walk mode our drag is
+> changing the land too it's not fixed to its place"
+>
+> "Also the visuals should look like this and smoothest rendering"
+> (screenshots of buildacountry's walk mode — the player's own character from
+> behind, bright low-poly streets)
 
-buildacountry's walker is a third-person puppet in the isometric scene. The
-owner's directive for v5 is explicit: *"the person walking in city should be
-me."* Walk mode is therefore a **true first-person camera**, not a followed
-avatar:
+An anchored world with nothing anchored ON screen reads as "the land slides".
+v5.2 returns to the reference model, calibrated from its real source:
 
-- **No body, no "You" tag.** `walk.js → view` IS the camera (x, y, yaw, pitch,
-  head-bob). `render.js` hands walk mode entirely to `fpv.js`, a perspective
-  projection renderer — buildings as sun-lit boxes with rooflines, kerbed
-  roads with lane dashes and zebra crossings, billboards for trees and the
-  four [NPC]s, rush-hour traffic you share the road with.
-- **Looking**: drag anywhere to turn your head, or click the street to lock
-  the mouse (Esc releases). Q/E or left/right arrows turn; WASD/joystick
-  moves relative to where you face; Shift runs.
-- **Orientation aids** (you have no body to anchor to): a marigold heading
-  chevron on the ground ahead of you, a district + compass chip (top), and a
-  pocket map with your heading arrow (top right; bottom right on phones).
-- **Doors still talk**: hanging ACQUIRED nameplates and quiet TO-LET cards
-  appear on doors within ~4.5 tiles (plate discipline — the street stays
-  clean; the plan map keeps its doorstep dots).
-- The old third-person buildacountry parity notes above still describe the
-  movement *rules* (speeds, collision R=0.24, emote rate-limit, 4-NPC cap);
-  only the camera and renderer changed.
+| Behaviour | buildacountry | Apna Shehar v5.2 |
+| --- | --- | --- |
+| Camera | third person, behind + above slot-0 body | same — visible green-kurta avatar, "You" tag |
+| Orbit distance | 8.4 landscape / 11.5 portrait | 6.2 / 8.2 lots (our lots are smaller) |
+| Pitch | 0.05–0.9, default 0.36 | same clamp, default 0.26 (roofs are lower) |
+| Projection | lookAt(body head) | pitch derived from look-at (chest 1.45) — stays framed at ANY distance |
+| Drag | yaw −= dx × (0.008 phone / 0.005 desktop) | identical |
+| Auto-follow | yaw eases behind body at dt×1.6 while walking forward | identical, paused 0.4 s after a drag |
+| Wall pull-in | ray-march 0.25 steps, fast-in/slow-out cd, lift ×0.35 | identical rule, floor 2.8 lots |
+| Body | slot 0 of the batch | `walk.js → player` (green kurta, drawn by the same sprite kit as the [NPC]s) |
+| Lens | none (clean render) | tilt-shift lens now plan-mode only; streets draw straight to the canvas |
+| Night | bright toggle | real IST clock with a raised ambient floor (0.46) in walk mode only |
 
+**Fixes shipped with it** (bugs found while rebuilding):
+
+- `agents.js`: two `const` → `let` (the rush-hour spawn backfill reassigned a
+  `const`, killing the render loop mid-frame on the deployed site);
+- `fpv.js → drawWalker`: passed pixel height into `drawBillSprite` (world
+  units) — every street person was double-scaled into off-screen giants;
+- `fpv.js → personSprite/cowSprite`: the plan-mode sketches (~13 px) are now
+  rendered enlarged inside the sprite canvas (×2 resolution) — street people
+  were invisible specks before;
+- perf: memoised `mix`/`shade`/`hazeCol` (thousands of string builds per
+  frame), cached sky/haze gradients, one cached radial sprite per night-light
+  colour, culling radii retuned for the higher camera.

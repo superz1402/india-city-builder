@@ -1,6 +1,6 @@
 // iso.js — isometric projection, orbit camera, and unified mouse/touch input.
-// Control model mirrors the original buildacountry: drag to pan (or to look
-// around in walk mode), wheel/pinch to zoom, tap to place or inspect.
+// Control model mirrors the original buildacountry: drag to pan (or to orbit
+// the walk camera in walk mode), wheel/pinch to zoom, tap to place or inspect.
 // v2 adds a camera yaw (cam.rot): the world rotates around its focus while
 // sprites stay upright — "drag to look around" at street level.
 
@@ -95,19 +95,6 @@ export function initInput(el, handlers) {
       const [a, b] = [...pointers.values()];
       pinchDist = Math.hypot(a.x - b.x, a.y - b.y);
     }
-    // street level: clicking the view captures the mouse for true FPS-style
-    // looking (Esc or exit-walk releases it); drag still works without lock
-    if (S.mode === 'walk' && e.pointerType === 'mouse' &&
-        document.pointerLockElement !== el && el.requestPointerLock) {
-      try { el.requestPointerLock(); } catch (err) { /* some browsers gate it — drag-look still works */ }
-    }
-  });
-
-  // pointer-lock mouse look (dx/dy come from movementX/Y, not client deltas)
-  document.addEventListener('mousemove', (e) => {
-    if (document.pointerLockElement === el && S.mode === 'walk' && onLook) {
-      onLook(e.movementX || 0, e.movementY || 0);
-    }
   });
 
   el.addEventListener('pointermove', (e) => {
@@ -120,7 +107,7 @@ export function initInput(el, handlers) {
       if (Math.hypot(e.clientX - downInfo.sx, e.clientY - downInfo.sy) > 9) {
         if (!moved) { moved = true; el.classList.add('dragging'); onDragStart && onDragStart(); }
         if (S.mode === 'walk') {
-          if (onLook) onLook(dx, dy);        // street level: drag = turn your head
+          if (onLook) onLook(dx, dy);        // street level: drag = orbit the camera around you
         } else {
           cam.x -= dx / cam.z; cam.y -= dy / cam.z;
           clampCam();
