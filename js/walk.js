@@ -1,37 +1,23 @@
-// walk.js — TRUE first-person street mode (v5 rehaul, issue #23).
-// The person walking the city is YOU: there is no avatar and no "You" tag —
-// `view` IS the camera (eye height, yaw, pitch, head-bob). WASD/arrows or the
-// joystick move you, Shift runs, drag or click-to-lock the mouse to look
-// around, Q/E or left/right arrows turn, keys 1-4 emote (nearby [NPC]
-// residents answer back). Deliberate deviation from buildacountry's
-// third-person walker — documented in docs/WALK-REFERENCE.md.
+// walk.js — street-level walk mode, v5: TRUE FIRST PERSON. You are the
+// walker: no avatar body, the camera lives where you stand (owner directive,
+// issue #23 — a documented deviation from buildacountry's third-person view).
+// WASD/arrow keys or the on-screen joystick, Shift to run, drag to look
+// around, emotes with keys 1-4. Only FOUR fake humans share the street — the
+// [NPC] residents of the deed book (owners.js), each tagged so they read as
+// pretend, not players.
 
-import { S, MAP, isWalkable, nearestWalkable } from './state.js';
+import { S, MAP, isWalkable, nearestWalkable, gridAt } from './state.js';
+import { cam, setZoom, isoOf, orbitBy } from './iso.js';
 import { deedFor, RESIDENTS } from './owners.js';
-import { cam, setZoom } from './iso.js';
 
 export const EMOTES = ['wave', 'namaste', 'diya', 'heart'];
 
-// the first-person camera state (the player has no rendered body)
-export const view = {
-  x: 24.5, y: 24.5,
-  yaw: Math.PI,          // facing south toward the chowk on entry
-  pitch: -0.04,          // a touch downward, like standing eyes
-  bob: 0,                // head-bob offset added to eye height
-  ph: 0,                 // gait phase (drives bob + chevron pulse)
-  moving: false, run: false,
-  emote: null, emoteUntil: 0,
-};
-
-// logical self (position mirror used by ui.js and the deed scan)
+// ---------- you ----------
 export const player = {
-  get x() { return view.x; }, set x(v) { view.x = v; },
-  get y() { return view.y; }, set y(v) { view.y = v; },
-  moving: false, run: false,
-  emote: null, emoteUntil: 0,
+  x: 18.5, y: 20.5, dir: 1, moving: false, run: false,
+  ph: 0, emote: null, emoteUntil: 0,
+  type: 'kurta', col: '#fff3d6', col2: '#e8850c', skin: 1, scale: 1.15,
 };
-
-export function getView() { return view; }
 
 // named residents walking the streets (spawned for walk mode)
 const walkers = [];
@@ -44,7 +30,7 @@ const walkerOutfits = [
 ];
 
 const keys = Object.create(null);
-const joy = { x: 0, y: 0, active: false, gx: 0, gy: 0, lx: 0, ly: 0 }; // gxy = gamepad left stick, lxy = gamepad right stick (look)
+const joy = { x: 0, y: 0, active: false, gx: 0, gy: 0 }; // xy = on-screen stick, gxy = gamepad stick
 
 export function walkActive() { return S.mode === 'walk'; }
 
@@ -55,10 +41,15 @@ export function enterWalk() {
   if (S.mode === 'walk' || !S.grid.length) return;
   S.mode = 'walk';
   savedCam = { x: cam.x, y: cam.y, z: cam.z, rot: cam.rot, py: cam.py };
-  // place yourself on a sensible street near the map centre, facing the chowk
-  const spot = nearestWalkable(Math.floor(MAP / 2), Math.floor(MAP / 2) - 2, 8) || { x: 24, y: 22 };
-  view.x = spot.x + 0.5; view.y = spot.y + 0.5;
-  view.yaw = Math.PI; view.pitch = -0.04; view.bob = 0;
+  // place the walker on a sensible street near the map centre
+  const spot = nearestWalkable(Math.floor(MAP / 2), Math.floor(MAP / 2) + 2, 8) || { x: 18, y: 20 };
+  player.x = spot.x + 0.5; player.y = spot.y + 0.5;
+  player.hAng = cam.rot ? cam.rot : Math.PI / 4; // chevron points where you look
+  cam.py = 0.58;
+  const i = isoOf(player.x, player.y);
+  cam.x = i.x; cam.y = i.y + 10;
+  cam.rot = cam.rot || Math.PI / 4;
+  setZoom(3.2); // first person lives close to the street
   spawnWalkers();
   document.body.classList.add('walking');
   syncWalkButtons();
@@ -69,8 +60,7 @@ export function exitWalk() {
   S.mode = 'plan';
   document.body.classList.remove('walking');
   walkers.length = 0;
-  view.moving = false;
-  if (document.pointerLockElement) document.exitPointerLock();
+  player.moving = false;
   if (savedCam) {
     cam.x = savedCam.x; cam.y = savedCam.y; cam.py = 0.5;
     setZoom(savedCam.z || 1.05);
@@ -81,8 +71,8 @@ export function exitWalk() {
 function syncWalkButtons() {
   const run = document.getElementById('btn-run');
   if (run) {
-    run.setAttribute('aria-pressed', String(view.run));
-    run.classList.toggle('on', view.run);
+    run.setAttribute('aria-pressed', String(player.run));
+    run.classList.toggle('on', player.run);
   }
 }
 
@@ -97,8 +87,8 @@ function spawnWalkers() {
       const [hx, hy] = deed.home.split(',').map(Number);
       ax = hx + 0.5; ay = hy + 1.8; // just outside the door
     } else {
-      ax = view.x + (Math.random() * 10 - 5);
-      ay = view.y + (Math.random() * 10 - 5);
+      ax = player.x + (Math.random() * 10 - 5);
+      ay = player.y + (Math.random() * 10 - 5);
     }
     const spot = nearestWalkable(Math.floor(ax), Math.floor(ay), 4);
     walkers.push({
@@ -115,35 +105,23 @@ function spawnWalkers() {
 
 // ---------- input plumbing ----------
 let runToggle = false;
+
 export function setKey(code, down) { keys[code] = down; }
 export function clearKeys() { for (const k in keys) keys[k] = false; }
 export function setJoystick(x, y, active) { joy.x = x; joy.y = y; joy.active = active; }
 export function setRun(on) { runToggle = !!on; syncWalkButtons(); }
 export function isRunning() { return runToggle || !!keys.ShiftLeft || !!keys.ShiftRight; }
-
-// mouse/pointer look — fed by iso.js drag + pointer-lock
-export function setLook(dx, dy) {
-  view.yaw += dx * 0.0031;
-  if (view.yaw > Math.PI) view.yaw -= Math.PI * 2;
-  if (view.yaw < -Math.PI) view.yaw += Math.PI * 2;
-  view.pitch = Math.max(-0.42, Math.min(0.42, view.pitch - dy * 0.0026));
-}
-export function turnBy(d) {
-  view.yaw += d;
-  if (view.yaw > Math.PI) view.yaw -= Math.PI * 2;
-  if (view.yaw < -Math.PI) view.yaw += Math.PI * 2;
-}
-
 export function doEmote(kind) {
   if (!walkActive() || !EMOTES.includes(kind)) return;
   const t = performance.now() / 1000;
-  if (t - (doEmote.last || 0) < 1.5) return;
+  if (t - (doEmote.last || 0) < 1.5) return; // reference parity: waves rate-limit to one per 1.5s
   doEmote.last = t;
-  view.emote = kind; view.emoteUntil = t + 2.4;
-  // nearby residents answer back
+  player.emote = kind;
+  player.emoteUntil = t + 2.4;
+  // nearby residents sometimes answer back
   for (const w of walkers) {
     if (w.emote) continue;
-    const d = Math.hypot(w.x - view.x, w.y - view.y);
+    const d = Math.hypot(w.x - player.x, w.y - player.y);
     if (d < 4.5 && Math.random() < 0.55) {
       w.emote = kind === 'heart' ? 'heart' : kind;
       w.emoteUntil = performance.now() / 1000 + 2.2;
@@ -151,67 +129,68 @@ export function doEmote(kind) {
   }
 }
 export function getEmotes() { return EMOTES; }
-export function nearbyCount() {
-  let n = 0;
-  for (const w of walkers) if (Math.hypot(w.x - view.x, w.y - view.y) < 5.5) n++;
-  return n;
-}
 
-// gamepad: left stick walks, right stick looks, A/cross runs, X/B emote
-function pollGamepad(dt) {
+// gamepad: left stick walks, A/cross runs, X/square + B/circle emote
+function pollGamepad() {
   const pads = navigator.getGamepads ? navigator.getGamepads() : [];
-  let gx = 0, gy = 0, lx = 0, ly = 0;
+  let gx = 0, gy = 0, any = false;
   for (const p of pads) {
     if (!p) continue;
     const ax = p.axes[0] || 0, ay = p.axes[1] || 0;
-    if (Math.abs(ax) > 0.18 || Math.abs(ay) > 0.18) { gx = ax; gy = ay; }
-    const rx = p.axes[2] || 0, ry = p.axes[3] || 0;
-    if (Math.abs(rx) > 0.22) lx = rx;
-    if (Math.abs(ry) > 0.22) ly = ry;
+    if (Math.abs(ax) > 0.18 || Math.abs(ay) > 0.18) { gx = ax; gy = ay; any = true; }
     setRun(!!(p.buttons[0] && p.buttons[0].pressed));
     if (p.buttons[2] && p.buttons[2].pressed) doEmote('wave');
     if (p.buttons[1] && p.buttons[1].pressed) doEmote('heart');
   }
-  joy.gx = gx; joy.gy = gy; joy.lx = lx; joy.ly = ly;
+  joy.gx = gx; joy.gy = gy; // zeroed when no pad — never sticks
 }
 
 // ---------- per-frame update ----------
 export function update(dt, t) {
   if (!walkActive()) return;
-  pollGamepad(dt);
-  view.run = isRunning();
+  pollGamepad();
+  player.run = isRunning();
 
-  // desired move in local space: forward / strafe
-  let fwd = -joy.y - joy.gy, str = joy.x + joy.gx;
-  if (keys.KeyW) fwd -= 1;
-  if (keys.KeyS) fwd += 1;
-  if (keys.KeyD) str += 1;
-  if (keys.KeyA) str -= 1;
-  // arrows + Q/E turn (street feel: you swing your head, not strafe)
-  let turn = 0;
-  if (keys.ArrowLeft || keys.KeyQ) turn -= 1;
-  if (keys.ArrowRight || keys.KeyE) turn += 1;
-  if (turn) turnBy(turn * dt * 2.5);
-  if (joy.lx) view.yaw += joy.lx * dt * 2.8;
-  if (joy.ly) view.pitch = Math.max(-0.42, Math.min(0.42, view.pitch + joy.ly * dt * 2.0));
+  // desired direction in screen space (joystick + gamepad + keys)
+  let jx = joy.x + joy.gx, jy = joy.y + joy.gy;
+  if (keys.KeyW || keys.ArrowUp) jy -= 1;
+  if (keys.KeyS || keys.ArrowDown) jy += 1;
+  if (keys.KeyA || keys.ArrowLeft) jx -= 1;
+  if (keys.KeyD || keys.ArrowRight) jx += 1;
+  const mag = Math.hypot(jx, jy);
+  if (mag > 1) { jx /= mag; jy /= mag; }
 
-  const mag = Math.hypot(fwd, str);
-  view.moving = mag > 0.12;
-  player.moving = view.moving;
-  if (view.moving) {
-    if (mag > 1) { fwd /= mag; str /= mag; }
-    const fx = Math.sin(view.yaw), fy = -Math.cos(view.yaw);
-    const rx = Math.cos(view.yaw), ry = Math.sin(view.yaw);
-    const wx = fx * fwd + rx * str;
-    const wy = fy * fwd + ry * str;
-    const speed = (view.run ? 4.4 : 2.1) * Math.min(1, mag * 1.4);
-    moveWithCollision(view, wx * speed * dt, wy * speed * dt);
-    view.ph += dt * (view.run ? 13 : 9);
-    view.bob = Math.abs(Math.sin(view.ph)) * (view.run ? 0.055 : 0.04);
+  player.moving = mag > 0.08;
+  let mwx = 0, mwy = 0;
+  if (player.moving) {
+    // rotate the screen-space direction into world space (inverse cam yaw)
+    const c = Math.cos(cam.rot), s = Math.sin(cam.rot);
+    const wx = jx * c + jy * s;
+    const wy = -jx * s + jy * c;
+    const speed = (player.run ? 4.4 : 2.1) * Math.min(1, mag * 1.4);
+    moveWithCollision(player, wx * speed * dt, wy * speed * dt);
+    if (Math.abs(wx) > 0.12) player.dir = wx > 0 ? 1 : -1;
+    player.ph += dt * (player.run ? 13 : 9);
+    mwx = wx; mwy = wy;
+    // first-person heading (screen-space angle for the ground chevron)
+    const vxi = (wx - wy) * 32, vyi = (wx + wy) * 16;
+    const crc = Math.cos(cam.rot), srn = Math.sin(cam.rot);
+    const ta = Math.atan2(vxi * srn + vyi * crc, vxi * crc - vyi * srn);
+    if (player.hAng == null) player.hAng = ta;
+    else {
+      let d = ta - player.hAng;
+      while (d > Math.PI) d -= Math.PI * 2;
+      while (d < -Math.PI) d += Math.PI * 2;
+      player.hAng += d * Math.min(1, dt * 10);
+    }
   } else {
-    view.bob += (0 - view.bob) * Math.min(1, dt * 6);
-    view.ph += dt * 1.2;
+    player.ph += dt * 1.2; // idle breathing
   }
+
+  // camera IS the walker in first person: no lead, tight follow
+  const i = isoOf(player.x, player.y);
+  cam.x += (i.x - cam.x) * Math.min(1, dt * 7);
+  cam.y += (i.y + 10 - cam.y) * Math.min(1, dt * 7);
 
   updateWalkers(dt, t);
 }
@@ -221,7 +200,7 @@ function moveWithCollision(a, dx, dy) {
   const canStand = (px, py) =>
     isWalkable(Math.floor(px - R), Math.floor(py - R)) && isWalkable(Math.floor(px + R), Math.floor(py - R)) &&
     isWalkable(Math.floor(px - R), Math.floor(py + R)) && isWalkable(Math.floor(px + R), Math.floor(py + R));
-  // axis-separated so you slide along walls instead of sticking
+  // axis-separated so walkers slide along walls
   const nx = a.x + dx;
   if (canStand(nx, a.y)) a.x = nx;
   const ny = a.y + dy;
@@ -248,6 +227,7 @@ function updateWalkers(dt, t) {
 }
 
 function pickWalkerTarget(w) {
+  // wander a little around the current anchor tile
   for (let tries = 0; tries < 8; tries++) {
     const nx = w.hx + Math.floor(Math.random() * 7 - 3);
     const ny = w.hy + Math.floor(Math.random() * 7 - 3);
@@ -260,12 +240,23 @@ function pickWalkerTarget(w) {
   w.wait = 1 + Math.random() * 4;
 }
 
+// people close enough to greet, for the "You + N nearby" chip
+export function nearbyCount() {
+  let n = 0;
+  for (const w of walkers) if (Math.hypot(w.x - player.x, w.y - player.y) < 5.5) n++;
+  return n;
+}
+
 export function getPlayer() { return player; }
 export function getWalkers() { return walkers; }
 
-// metaverse visits: drop yourself next to a tile (home, shop, search result)
+// metaverse visits: drop the walker next to a tile (home, shop, search result)
 export function teleportTo(x, y) {
   const s = nearestWalkable(Math.floor(x), Math.floor(y), 8) || { x: Math.floor(x), y: Math.floor(y) };
-  view.x = s.x + 0.5; view.y = s.y + 0.5;
-  view.moving = false;
+  player.x = s.x + 0.5; player.y = s.y + 0.5;
+  player.moving = false;
+  if (walkActive()) {
+    const i = isoOf(player.x, player.y);
+    cam.x = i.x; cam.y = i.y + 10;
+  }
 }
