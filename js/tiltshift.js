@@ -16,8 +16,20 @@
 // Zero images, zero libraries: blur = downscale/upscale round trips, masks =
 // destination-in gradients, grade = ctx.filter with a graceful fallback.
 
-let pref = true;
-try { pref = localStorage.getItem('apna-shehar-lens-v1') !== '0'; } catch (e) { /* storage blocked — default on */ }
+// Default ON only where it can hold frame-rate: desktop pointers. Phones/
+// tablets pay ~2.75x per frame for the two masked blur pipelines (measured
+// 8 vs 22 fps in walk mode) — the owner asked for the SMOOTHEST rendering,
+// so coarse-pointer devices start with the lens OFF and can still flip it
+// on from the lens button (an explicit toggle always wins over the default).
+let pref = (() => {
+  try {
+    const saved = localStorage.getItem('apna-shehar-lens-v1');
+    if (saved !== null) return saved !== '0';          // explicit user choice
+  } catch (e) { /* storage blocked — fall through to capability default */ }
+  const coarse = typeof matchMedia === 'function' &&
+    (matchMedia('(pointer: coarse)').matches || matchMedia('(hover: none)').matches);
+  return !coarse;
+})();
 
 let sharp = null, light = null, heavy = null, tmpA = null, tmpB = null, tmpC = null;
 let lw = 0, lh = 0, ldpr = 1;

@@ -122,7 +122,7 @@ export function update(dt, t) {
     const cows = agents.filter(a => a.kind === 'cow').length;
     if (people < wantPeople) { const s = randomSpawnTile(false); if (s) agents.push(makePerson(s.x, s.y)); }
     if (vehicles < wantVehicles) {
-      const s = randomSpawnTile(true);
+      let s = randomSpawnTile(true);
       if (s) agents.push(makeVehicle(s.x, s.y));
       if (wantVehicles - vehicles > 10 && (s = randomSpawnTile(true))) agents.push(makeVehicle(s.x, s.y)); // rush builds fast
     }
@@ -133,7 +133,7 @@ export function update(dt, t) {
       if (idx >= 0) agents.splice(idx, 1);
     }
     if (vehicles > wantVehicles + 3) {
-      const idx = agents.findIndex(a => a.kind === 'vehicle');
+      let idx = agents.findIndex(a => a.kind === 'vehicle');
       if (idx >= 0) agents.splice(idx, 1);
       if (vehicles - wantVehicles > 12 && (idx = agents.findIndex(a => a.kind === 'vehicle')) >= 0) agents.splice(idx, 1);
     }
