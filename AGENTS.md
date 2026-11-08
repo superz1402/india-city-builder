@@ -197,3 +197,29 @@ auto-tour camera (reference-style).
    Match it when touching walk mode; record deviations with reasons.
 3. **Tokens:** see §9 — remote URL only, rotate after chat exposure.
    The current token was pasted in chat on 2026-11-09 and must be rotated.
+
+## 11. Mahanagar Edition (owner directive, Nov 2026 rehaul #2)
+
+Owner asked (2026-11-09): "Add Indian style houses, bungalows, companies,
+buildings and everything, build roads, cars, build a whole city. On the doors
+when walking they can see which one is acquired which one is not. Rehaul the
+UI/UX." Shipped as v3 (issue #20):
+
+1. **The city is pre-built in code.** `generateCity()` in state.js lays out
+   the 48×48 Mahanagar (avenues every 8 tiles, chowk plaza, river bridges,
+   five district bands). Deed tiles for the four [NPC] residents are
+   RESERVED constants (`CITY_DEED_TILES`); owners.js ASSIGNMENTS must quote
+   exactly those tiles — `scripts/test-city.mjs` asserts the sync. Run it
+   after touching layout or deeds.
+2. **Door plates are a core mechanic, not garnish.** Every deed-able building
+   renders an ACQUIRED nameplate (green, owner name) or TO-LET board (cream,
+   red) at its door in walk mode (radius ~9.5 tiles from the player), and
+   green/amber doorstep dots in plan mode. Keep this pairing when touching
+   render.js or owners.js.
+3. **UI is the "Mahanagar Metro" design system.** Dark glass chrome (never
+   opaque white), Outfit font, marigold gradient CTA, floating HUD slab +
+   build dock, bottom-sheet panels on phones. All element IDs from v2 are
+   preserved — JS wiring depends on them.
+4. Balance rule: the pre-built city must boot green (water/power/food cover
+   its population). If you add companies (pw demand) or housing, size
+   substations/water tanks in generateCity() and re-run the harness.

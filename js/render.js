@@ -5,7 +5,9 @@
 
 import { S, MAP, gridAt } from './state.js';
 import { TW, TH, cam, isoOf, screenToWorld, worldToScreen } from './iso.js';
-import { drawBuilding, drawPerson, drawCow, drawVehicle, lights, beginFrame, setLightOrigin } from './arts.js';
+import { drawBuilding, drawPerson, drawCow, drawVehicle, drawDoorPlate, lights, beginFrame, setLightOrigin } from './arts.js';
+import { BUILDINGS } from './data.js';
+import { deeds } from './owners.js';
 import { isNight, hourOfDay, seasonOf } from './sim.js';
 import { getAgents } from './agents.js';
 import { getPlayer, getWalkers, walkActive } from './walk.js';
@@ -73,6 +75,19 @@ export function render(now) {
   const x0 = Math.max(0, Math.floor(minX) - 3), x1 = Math.min(MAP - 1, Math.ceil(maxX) + 3);
   const y0 = Math.max(0, Math.floor(minY) - 3), y1 = Math.min(MAP - 1, Math.ceil(maxY) + 4);
 
+  // ---- deed book index for this frame: "x,y" -> [{name, kind}] ----
+  const deedMap = new Map();
+  for (const d of deeds()) for (const kind of ['home', 'shop']) {
+    if (!d[kind]) continue;
+    const [tx, ty] = d[kind].split(',').map(Number);
+    if (!Number.isFinite(tx)) continue;
+    const key = tx + ',' + ty;
+    if (!deedMap.has(key)) deedMap.set(key, []);
+    deedMap.get(key).push({ name: d.name, kind });
+  }
+  const walking = walkActive();
+  const pl = walking ? getPlayer() : null;
+
   // ---- terrain pass + collect depth-sorted drawables ----
   // v2 sort key: screen y after camera yaw — correct painter order at any orbit.
   const drawables = [];
@@ -92,7 +107,25 @@ export function render(now) {
         diamond(p.x, p.y); ctx.fill();
       }
       const gd = gridAt(x, y);
-      if (gd) drawables.push({ sy: p.y, k: gd.k, x, y, sd: gd.seed, kb: gd.knobs || null });
+      if (gd) {
+        drawables.push({ sy: p.y, k: gd.k, x, y, sd: gd.seed, kb: gd.knobs || null });
+        // ownership at the door: plates at street level, status dots on the map
+        const kind = deedableKind(gd.k);
+        if (kind) {
+          const own = deedMap.get(x + ',' + y);
+          if (walking && pl) {
+            const dist = Math.hypot(x + 0.5 - pl.x, y + 0.5 - pl.y);
+            if (dist < 9.5) {
+              drawables.push({
+                sy: p.y + 2, sx: p.x, sy2: p.y + 2,
+                plate: { dist, info: own && own.length ? { owned: true, name: own[0].name, kind: own[0].kind } : { owned: false, kind } },
+              });
+            }
+          } else if (!walking) {
+            drawables.push({ sy: p.y + 1.5, sx: p.x, sy2: p.y + 1.5, dot: { owned: !!(own && own.length) } });
+          }
+        }
+      }
     }
   }
 
@@ -106,9 +139,7 @@ export function render(now) {
   }
 
   // ---- walk mode: you + named residents ----
-  const walking = walkActive();
   if (walking) {
-    const pl = getPlayer();
     const pi = isoOf(pl.x, pl.y);
     const pp = worldToScreen(pi.x, pi.y + TH / 2);
     drawables.push({ sy: pp.y + 0.6, person: pl, sx: pp.x, sy2: pp.y, isPlayer: true });
@@ -133,6 +164,29 @@ export function render(now) {
       if (a.kind === 'cow') drawCow(ctx, 0, 0, t, a.ph);
       else if (a.kind === 'person') drawPerson(ctx, 0, 0, a, t);
       else drawVehicle(ctx, 0, 0, a, t, night);
+      ctx.restore();
+    } else if (dr.plate) {
+      // door plate: ACQUIRED nameplate or TO-LET board, fading with distance
+      ctx.save();
+      ctx.translate(dr.sx, dr.sy2);
+      const ps = Math.max(0.85, cam.z);
+      ctx.scale(ps, ps);
+      setLightOrigin(dr.sx, dr.sy2, ps);
+      ctx.globalAlpha = Math.min(1, Math.max(0, (9.5 - dr.plate.dist) / 2.2));
+      drawDoorPlate(ctx, 0, 0, dr.plate.info, t, night);
+      ctx.globalAlpha = 1;
+      ctx.restore();
+    } else if (dr.dot) {
+      // plan-mode doorstep status dot: green = acquired, amber = TO-LET
+      ctx.save();
+      ctx.translate(dr.sx, dr.sy2);
+      ctx.scale(cam.z, cam.z);
+      ctx.globalAlpha = 0.92;
+      ctx.fillStyle = dr.dot.owned ? 'rgba(53,212,154,.95)' : 'rgba(255,176,58,.92)';
+      ctx.strokeStyle = 'rgba(0,0,0,.4)'; ctx.lineWidth = 0.8;
+      ctx.beginPath(); ctx.moveTo(0, -3.4); ctx.lineTo(5.4, 0); ctx.lineTo(0, 3.4); ctx.lineTo(-5.4, 0); ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      ctx.globalAlpha = 1;
       ctx.restore();
     } else if (dr.person) {
       const a = dr.person;
@@ -162,11 +216,28 @@ export function render(now) {
   // ---- night pass (lights are screen-space, collected during draws) ----
   if (night) {
     if (festival) festivalNight(t);
+    // procedural street lamps on the road grid (no tiles consumed)
+    if (S.grid.length) for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+      const g = gridAt(x, y);
+      if (!g || g.k !== 'road') continue;
+      if ((x * 3 + y * 7) % 6 !== 0) continue;
+      const i = isoOf(x, y);
+      const p = worldToScreen(i.x, i.y + TH / 2);
+      if (p.x < -20 || p.x > W + 20 || p.y < -40 || p.y > H + 40) continue;
+      const top = 15 * Math.max(0.8, cam.z);
+      ctx.strokeStyle = 'rgba(40,46,58,.9)'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x, p.y - top); ctx.stroke();
+      ctx.fillStyle = '#ffe082';
+      ctx.beginPath(); ctx.arc(p.x, p.y - top - 1.5, 1.8 * Math.max(0.8, cam.z), 0, 7); ctx.fill();
+      lights.push({ x: p.x, y: p.y - top, r: 30, c: 'rgba(255,200,110,.20)' });
+    }
     const na = hour >= 19.5 || hour < 5 ? 0.5 : 0.3;
     ctx.fillStyle = `rgba(12,16,52,${na})`;
     ctx.fillRect(0, 0, W, H);
     ctx.globalCompositeOperation = 'lighter';
-    for (const l of lights) {
+    const step = Math.max(1, Math.ceil(lights.length / 380)); // city-scale cap: keep the light pass cheap
+    for (let li = 0; li < lights.length; li += step) {
+      const l = lights[li];
       const rg = ctx.createRadialGradient(l.x, l.y, 0, l.x, l.y, l.r * Math.max(0.7, cam.z * 0.8));
       rg.addColorStop(0, l.c); rg.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = rg;
@@ -209,6 +280,16 @@ function diamond(cx, cy) {
   ctx.moveTo(cx, cy - TH / 2); ctx.lineTo(cx + TW / 2, cy);
   ctx.lineTo(cx, cy + TH / 2); ctx.lineTo(cx - TW / 2, cy);
   ctx.closePath();
+}
+
+// kind of deed a building can carry (mirror of ui.js deedKindFor) — plates
+// hang on homes and workplaces only, never on parks or lamps
+function deedableKind(k) {
+  const d = BUILDINGS[k];
+  if (!d) return null;
+  if (d.cat === 'house' || d.homes) return 'home';
+  if (d.cat === 'shop' || d.cat === 'work' || d.cat === 'civic' || d.cat === 'faith' || d.income || d.jobs) return 'shop';
+  return null;
 }
 
 // ---------- name tags & emote bubbles (screen space, walk mode) ----------

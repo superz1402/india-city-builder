@@ -6,12 +6,12 @@
   "game": "Apna Shehar — India City Builder",
   "version": 3,
   "generator": "scripts/catalog.mjs (schema adapted from lucas-martinic/polyfork-catalog)",
-  "generatedAt": "2026-11-08T18:50:37.747Z",
+  "generatedAt": "2026-11-08T19:24:38.326Z",
   "clock": "Asia/Kolkata (UTC+05:30) — real time drives day/night",
   "counts": {
-    "assets": 41,
+    "assets": 48,
     "kits": 8,
-    "knobbed": 14,
+    "knobbed": 21,
     "residents": 4,
     "categories": 8,
     "festivals": 5,
@@ -23,7 +23,7 @@
       "name": "Mohalla Homes",
       "category": "house",
       "desc": "Jhuggi tarp to haveli jharokhas — the gully where everyone lives.",
-      "parts": 6
+      "parts": 8
     },
     {
       "id": "kheti-baadi",
@@ -37,7 +37,7 @@
       "name": "Bazaar Line",
       "category": "shop",
       "desc": "Chai tapri to bank — commerce, loudly.",
-      "parts": 8
+      "parts": 9
     },
     {
       "id": "seva-sadan",
@@ -65,7 +65,7 @@
       "name": "Loom & Mill",
       "category": "work",
       "desc": "Kilns, factories and mills — jobs, with smoke.",
-      "parts": 3
+      "parts": 7
     },
     {
       "id": "gully-sajja",
@@ -280,6 +280,43 @@
       "art": "js/arts.js drawBuilding case 'bungalow'"
     },
     {
+      "id": "chawl",
+      "title": "Chawl",
+      "type": "building",
+      "kit": "mohalla-homes",
+      "category": "house",
+      "stats": {
+        "cost": 6500,
+        "upkeep": 12,
+        "homes": 30,
+        "jobs": 0,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 0,
+        "happiness": 0,
+        "pollution": 0,
+        "unlockTier": 2
+      },
+      "description": "Rows of one-room homes around a shared courtyard — Mumbai spirit.",
+      "knobs": {
+        "wash": {
+          "options": [
+            "multicolour",
+            "pastel",
+            "plain"
+          ],
+          "colors": {
+            "multicolour": "#d81b60",
+            "pastel": "#90caf9",
+            "plain": "#b0bec5"
+          }
+        }
+      },
+      "def": "js/data.js BUILDINGS.chawl",
+      "art": "js/arts.js drawBuilding case 'chawl'"
+    },
+    {
       "id": "flats",
       "title": "Flat Block",
       "type": "building",
@@ -315,6 +352,49 @@
       },
       "def": "js/data.js BUILDINGS.flats",
       "art": "js/arts.js drawBuilding case 'flats'"
+    },
+    {
+      "id": "villa",
+      "title": "Modern Villa",
+      "type": "building",
+      "kit": "mohalla-homes",
+      "category": "house",
+      "stats": {
+        "cost": 15000,
+        "upkeep": 14,
+        "homes": 10,
+        "jobs": 0,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 0,
+        "happiness": 3,
+        "pollution": 0,
+        "unlockTier": 3
+      },
+      "description": "Glass balconies, a car porch, and a brass plate at the gate.",
+      "knobs": {
+        "paint": {
+          "options": [
+            "ivory",
+            "concrete",
+            "sand"
+          ],
+          "colors": {
+            "ivory": "#f5efe0",
+            "concrete": "#d7dbde",
+            "sand": "#e6d2ac"
+          }
+        },
+        "porch": {
+          "options": [
+            "car",
+            "garden"
+          ]
+        }
+      },
+      "def": "js/data.js BUILDINGS.villa",
+      "art": "js/arts.js drawBuilding case 'villa'"
     },
     {
       "id": "wheat",
@@ -611,6 +691,38 @@
       "art": "js/arts.js drawBuilding case 'jeweller'"
     },
     {
+      "id": "mall",
+      "title": "Shopping Mall",
+      "type": "building",
+      "kit": "bazaar-line",
+      "category": "shop",
+      "stats": {
+        "cost": 22000,
+        "upkeep": 22,
+        "homes": 0,
+        "jobs": 20,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 520,
+        "happiness": 3,
+        "pollution": 0,
+        "unlockTier": 3
+      },
+      "description": "Escalators, food court, and AC you pay for.",
+      "knobs": {
+        "signage": {
+          "options": [
+            "magenta",
+            "saffron",
+            "teal"
+          ]
+        }
+      },
+      "def": "js/data.js BUILDINGS.mall",
+      "art": "js/arts.js drawBuilding case 'mall'"
+    },
+    {
       "id": "bank",
       "title": "Bank",
       "type": "building",
@@ -792,19 +904,19 @@
       "kit": "seva-sadan",
       "category": "civic",
       "stats": {
-        "cost": 7000,
+        "cost": 8000,
         "upkeep": 6,
         "homes": 0,
         "jobs": 1,
         "food": 0,
         "water": 0,
-        "power": 90,
+        "power": 240,
         "income": 0,
         "happiness": 0,
         "pollution": 0,
         "unlockTier": 0
       },
-      "description": "Transformer ki gun gun — steady bijli.",
+      "description": "City-grade transformer ki gun gun — steady bijli.",
       "def": "js/data.js BUILDINGS.substation",
       "art": "js/arts.js drawBuilding case 'substation'"
     },
@@ -1122,6 +1234,154 @@
       "art": "js/arts.js drawBuilding case 'textile'"
     },
     {
+      "id": "office",
+      "title": "Company Office",
+      "type": "building",
+      "kit": "loom-mill",
+      "category": "work",
+      "stats": {
+        "cost": 14000,
+        "upkeep": 12,
+        "homes": 0,
+        "jobs": 18,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 420,
+        "happiness": 0,
+        "pollution": 0,
+        "unlockTier": 2
+      },
+      "description": "Glass-fronted offices where the city logs in every morning.",
+      "knobs": {
+        "glass": {
+          "options": [
+            "azure",
+            "teal",
+            "smoke"
+          ],
+          "colors": {
+            "azure": "#7fb8d8",
+            "teal": "#6fb8b0",
+            "smoke": "#9aa7b0"
+          }
+        }
+      },
+      "def": "js/data.js BUILDINGS.office",
+      "art": "js/arts.js drawBuilding case 'office'"
+    },
+    {
+      "id": "tower",
+      "title": "Corporate Tower",
+      "type": "building",
+      "kit": "loom-mill",
+      "category": "work",
+      "stats": {
+        "cost": 30000,
+        "upkeep": 26,
+        "homes": 0,
+        "jobs": 40,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 900,
+        "happiness": 0,
+        "pollution": 0,
+        "unlockTier": 3
+      },
+      "description": "The skyline. WFH cancelled.",
+      "knobs": {
+        "crown": {
+          "options": [
+            "saffron",
+            "white",
+            "emerald"
+          ],
+          "colors": {
+            "saffron": "#ff8f00",
+            "white": "#eceff1",
+            "emerald": "#2e7d32"
+          }
+        }
+      },
+      "def": "js/data.js BUILDINGS.tower",
+      "art": "js/arts.js drawBuilding case 'tower'"
+    },
+    {
+      "id": "hotel",
+      "title": "Hotel",
+      "type": "building",
+      "kit": "loom-mill",
+      "category": "work",
+      "stats": {
+        "cost": 18000,
+        "upkeep": 16,
+        "homes": 0,
+        "jobs": 14,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 380,
+        "happiness": 2,
+        "pollution": 0,
+        "unlockTier": 3
+      },
+      "description": "Banquets, buffet breakfast, and a revolving door.",
+      "knobs": {
+        "board": {
+          "options": [
+            "gold",
+            "blue",
+            "green"
+          ],
+          "colors": {
+            "gold": "#d4a017",
+            "blue": "#1565c0",
+            "green": "#2e7d32"
+          }
+        }
+      },
+      "def": "js/data.js BUILDINGS.hotel",
+      "art": "js/arts.js drawBuilding case 'hotel'"
+    },
+    {
+      "id": "petrol",
+      "title": "Petrol Pump",
+      "type": "building",
+      "kit": "loom-mill",
+      "category": "work",
+      "stats": {
+        "cost": 7000,
+        "upkeep": 6,
+        "homes": 0,
+        "jobs": 4,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 160,
+        "happiness": 0,
+        "pollution": 0,
+        "unlockTier": 2
+      },
+      "description": "Canopy, pumps, and a patient queue of autos.",
+      "knobs": {
+        "canopy": {
+          "options": [
+            "red",
+            "blue",
+            "green"
+          ],
+          "colors": {
+            "red": "#c62828",
+            "blue": "#1565c0",
+            "green": "#2e7d32"
+          }
+        }
+      },
+      "def": "js/data.js BUILDINGS.petrol",
+      "art": "js/arts.js drawBuilding case 'petrol'"
+    },
+    {
       "id": "road",
       "title": "Road",
       "type": "prop",
@@ -1240,43 +1500,52 @@
   "residents": [
     {
       "name": "[NPC] Ramu",
-      "home": "17,18",
-      "shop": null,
+      "home": "13,32",
+      "shop": "20,32",
       "deedSource": "code"
     },
     {
       "name": "[NPC] Meera",
-      "home": "19,18",
-      "shop": null,
+      "home": "12,34",
+      "shop": "28,24",
       "deedSource": "code"
     },
     {
       "name": "[NPC] Arjun",
-      "home": "18,17",
-      "shop": null,
+      "home": "13,10",
+      "shop": "22,26",
       "deedSource": "code"
     },
     {
       "name": "[NPC] Zoya",
-      "home": null,
-      "shop": null,
-      "deedSource": "in-game"
+      "home": "29,16",
+      "shop": "36,24",
+      "deedSource": "code"
     }
   ],
   "deeds": [
     {
       "name": "[NPC] Ramu",
-      "home": "17,18",
+      "home": "13,32",
+      "shop": "20,32",
       "fromCode": true
     },
     {
       "name": "[NPC] Meera",
-      "home": "19,18",
+      "home": "12,34",
+      "shop": "28,24",
       "fromCode": true
     },
     {
       "name": "[NPC] Arjun",
-      "home": "18,17",
+      "home": "13,10",
+      "shop": "22,26",
+      "fromCode": true
+    },
+    {
+      "name": "[NPC] Zoya",
+      "home": "29,16",
+      "shop": "36,24",
       "fromCode": true
     }
   ],

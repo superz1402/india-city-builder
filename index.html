@@ -3,30 +3,33 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#e8850c">
-<meta name="description" content="Apna Shehar — build your own Indian city, then walk its streets in real Indian time. A free browser city-builder with walking mode, owned homes and shops, mandirs, dhabas, autos, festivals and sacred cows.">
+<meta name="theme-color" content="#10131f">
+<meta name="description" content="Apna Shehar — a whole Indian city you can walk. Build your own Indian city, then walk its streets in real Indian time. Owned homes, TO-LET boards, mandirs, dhabas, autos, festivals and sacred cows.">
 <title>Apna Shehar — India City Builder</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23e8850c'/%3E%3Cpath d='M16 5c5 3.4 7 7.4 7 11.4 0 4.6-3.1 7.6-7 7.6s-7-3-7-7.6C9 12.4 11 8.4 16 5z' fill='%23fff7ea'/%3E%3Ccircle cx='16' cy='15' r='3' fill='%23e8850c'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23ffb03a'/%3E%3Cpath d='M6 24V13l5-4 5 4v11zM18 24V9l4-3 4 3v15z' fill='%2310131f'/%3E%3Cpath d='M9 16h2v2H9zm4 0h2v2h-2zM9 20h2v2H9zm4 0h2v2h-2z' fill='%23ffb03a'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <canvas id="game" aria-label="City map. Drag to pan or look around, pinch or scroll to zoom, tap a tile to build or inspect." role="img"></canvas>
 
-  <!-- Top HUD -->
+  <!-- Top HUD: floating glass slab -->
   <header id="hud" class="hud">
     <div class="hud-brand">
-      <svg viewBox="0 0 32 32" class="logo" aria-hidden="true"><rect width="32" height="32" rx="7" fill="var(--accent)"/><path d="M16 5c5 3.4 7 7.4 7 11.4 0 4.6-3.1 7.6-7 7.6s-7-3-7-7.6C9 12.4 11 8.4 16 5z" fill="#fff7ea"/><circle cx="16" cy="15" r="3" fill="var(--accent)"/></svg>
+      <svg viewBox="0 0 32 32" class="logo" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--accent)"/><path d="M6 24V13l5-4 5 4v11zM18 24V9l4-3 4 3v15z" fill="#10131f"/><path d="M9 16h2v2H9zm4 0h2v2h-2zM9 20h2v2H9zm4 0h2v2h-2z" fill="var(--accent)"/></svg>
       <div class="brand-text">
         <strong>Apna Shehar</strong>
-        <span id="town-title">Chhota Gaon</span>
+        <span id="town-title">Mahanagar</span>
       </div>
     </div>
     <div class="hud-stats" role="status" aria-live="polite">
-      <span class="stat" title="Treasury"><svg class="ic" aria-hidden="true"><use href="#i-rupee"/></svg><b id="st-money" class="tnum">0</b></span>
-      <span class="stat" title="Population"><svg class="ic" aria-hidden="true"><use href="#i-people"/></svg><b id="st-pop" class="tnum">0</b></span>
-      <span class="stat" title="Happiness"><svg class="ic" aria-hidden="true"><use href="#i-smile"/></svg><b id="st-happy">—</b></span>
-      <span class="stat" title="Real Indian Standard Time — the sky follows this clock"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg><b id="st-clock" class="tnum">—</b></span>
-      <span class="stat" title="City day and season"><svg class="ic" aria-hidden="true"><use href="#i-sun"/></svg><b id="st-day" class="tnum">Day 1</b></span>
+      <span class="stat st-money" title="Treasury"><svg class="ic" aria-hidden="true"><use href="#i-rupee"/></svg><b id="st-money" class="tnum">0</b></span>
+      <span class="stat st-pop" title="Population"><svg class="ic" aria-hidden="true"><use href="#i-people"/></svg><b id="st-pop" class="tnum">0</b></span>
+      <span class="stat st-happy" title="Happiness"><svg class="ic" aria-hidden="true"><use href="#i-smile"/></svg><b id="st-happy">—</b></span>
+      <span class="stat st-clock" title="Real Indian Standard Time — the sky follows this clock"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg><b id="st-clock" class="tnum">—</b></span>
+      <span class="stat st-day" title="City day and season"><svg class="ic" aria-hidden="true"><use href="#i-sun"/></svg><b id="st-day" class="tnum">Day 1</b></span>
     </div>
     <div class="hud-actions">
       <button id="btn-speed" class="icon-btn" aria-label="Pause or resume" title="Pause / play (Space)"><svg class="ic" aria-hidden="true"><use href="#i-pause"/></svg></button>
@@ -35,7 +38,7 @@
     </div>
   </header>
 
-  <!-- Find-your-home search (reference parity: search a name, visit their door) -->
+  <!-- Find-your-home search (search a name, visit their door) -->
   <div id="search-wrap">
     <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>
     <input id="search-input" type="search" placeholder="Find your home: type a name" autocomplete="off" aria-label="Search residents by name">
@@ -52,15 +55,15 @@
   <!-- Notice feed -->
   <div id="feed" class="feed" aria-live="polite" aria-label="City news"></div>
 
-  <!-- Bottom build bar (plan mode) -->
+  <!-- Bottom build dock (plan mode) -->
   <nav id="buildbar" class="buildbar" aria-label="Build menu">
     <div id="cat-tabs" class="cat-tabs" role="tablist"></div>
     <div id="build-items" class="build-items" role="tabpanel"></div>
   </nav>
 
-  <!-- Camera controls (plan mode, bottom right) -->
+  <!-- Camera controls (plan mode, right rail) -->
   <div class="cam">
-    <button id="btn-walk" class="pill-btn" title="Walk the streets (like the original)" aria-label="Walk the streets"><svg class="ic" aria-hidden="true"><use href="#i-walk"/></svg>Walk</button>
+    <button id="btn-walk" class="pill-btn" title="Walk the streets" aria-label="Walk the streets"><svg class="ic" aria-hidden="true"><use href="#i-walk"/></svg>Walk</button>
     <button id="btn-rot-l" class="icon-btn" aria-label="Rotate camera left" title="Rotate left"><svg class="ic" aria-hidden="true"><use href="#i-rot-l"/></svg></button>
     <button id="btn-rot-r" class="icon-btn" aria-label="Rotate camera right" title="Rotate right"><svg class="ic" aria-hidden="true"><use href="#i-rot-r"/></svg></button>
     <button id="cam-in" class="icon-btn" aria-label="Zoom in"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg></button>
@@ -72,6 +75,10 @@
     <div class="walk-top">
       <span id="walk-chip" class="walk-chip">Just you here</span>
       <button id="btn-exit-walk" class="pill-btn exit" title="Back to the map"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg>Exit walk</button>
+    </div>
+    <div id="walk-legend" class="walk-legend" aria-hidden="true">
+      <span class="lg owned"></span> Acquired
+      <span class="lg vacant"></span> TO-LET
     </div>
     <div id="walk-near" class="walk-near" hidden></div>
     <div id="joy" class="joy" aria-label="Walking joystick" title="Drag to walk">
@@ -125,24 +132,24 @@
   <div id="help-panel" class="panel" hidden role="dialog" aria-label="How to play">
     <div class="panel-head"><h2>How to play</h2><button class="icon-btn" data-close aria-label="Close help"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></div>
     <div class="help-body">
-      <p><b>1. Build homes.</b> People move in when there is housing, food and work.</p>
-      <p><b>2. Build farms and shops.</b> Farms feed the shehar, shops earn rupees every day.</p>
-      <p><b>3. Own it like a metaverse.</b> Tap any home or shop → <i>Assign owner</i> → pick one of the four [NPC] residents. They own it: home at night, shop by day, all on the real IST clock. Edit residents in code: <b>js/owners.js</b>.</p>
-      <p><b>4. Walk the streets.</b> Press <i>Walk</i>. WASD/arrows or the joystick to move, Shift or RUN to jog, drag to look around, 1-4 to emote. Only four fake humans ([NPC] tags) stroll the city — wave at them; everyone else here is you.</p>
-      <p><b>5. Keep everyone happy.</b> Faith places, parks, schools and hospitals raise Khush-hali. Factories pollute — balance with trees.</p>
-      <p><b>6. Watch the meters.</b> Water tanks, substations and food stocks must cover demand.</p>
-      <p><b>The sky is real.</b> Day and night follow actual Indian Standard Time — lamps glow when India is dark, festivals shine when India celebrates.</p>
-      <p><b>Controls.</b> Map: drag to pan, rotate buttons to orbit, scroll/pinch to zoom, tap to build or inspect. Walk: drag to look. Search a name (top-left) to find anyone's home. The cow has right of way — always.</p>
+      <p><b>A whole city waits.</b> Mahanagar comes pre-built in code — Civil Lines bungalows, a CBD of companies and towers, the Old Mohalla bazaar, a residential colony, factories and farms. Extend it: pick from the dock and tap the map.</p>
+      <p><b>Own it like a metaverse.</b> Tap any home or shop → <i>Assign owner</i> → pick one of the four [NPC] residents. Green plates at doors mean ACQUIRED; cream boards mean TO-LET — available for a new owner.</p>
+      <p><b>Walk the streets.</b> Press <i>Walk</i>. WASD/arrows or the joystick to move, Shift or RUN to jog, drag to look around, 1-4 to emote. Only four fake humans ([NPC] tags) stroll the city — wave at them; everyone else here is you.</p>
+      <p><b>Read the doors.</b> Every deed-able building shows its status at the door while you walk. Tap a door to inspect it, or search a resident's name to visit their place.</p>
+      <p><b>Keep everyone happy.</b> Faith places, parks, schools and hospitals raise Khush-hali. Companies bring jobs and cars; factories bring smoke — balance with trees.</p>
+      <p><b>Watch the meters.</b> Water tanks, substations and food stocks must cover a growing city.</p>
+      <p><b>The sky is real.</b> Day and night follow actual Indian Standard Time — street lamps glow when India is dark, festivals shine when India celebrates.</p>
+      <p><b>Controls.</b> Map: drag to pan, rotate buttons to orbit, scroll/pinch to zoom, tap to build or inspect. Walk: drag to look. The cow has right of way — always.</p>
     </div>
   </div>
 
   <!-- New game confirm -->
   <div id="confirm-panel" class="panel" hidden role="dialog" aria-label="Confirm new city">
     <div class="panel-head"><h2>Start a new city?</h2><button class="icon-btn" data-close aria-label="Close"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></div>
-    <p class="confirm-text">This bulldozes everything you built. Your current city stays saved until you press the button below.</p>
+    <p class="confirm-text">This bulldozes everything you changed. A fresh Mahanagar is rebuilt from code. Your current city stays saved until you press the button below.</p>
     <div class="confirm-row">
       <button class="btn" data-close>Keep my city</button>
-      <button class="btn danger" id="btn-new-yes">Bulldoze &amp; restart</button>
+      <button class="btn danger" id="btn-new-yes">Rebuild from code</button>
     </div>
   </div>
 
@@ -152,11 +159,37 @@
   <!-- First-run welcome -->
   <div id="welcome" class="welcome" hidden role="dialog" aria-label="Welcome">
     <div class="welcome-card">
-      <svg viewBox="0 0 32 32" class="welcome-logo" aria-hidden="true"><rect width="32" height="32" rx="7" fill="var(--accent)"/><path d="M16 5c5 3.4 7 7.4 7 11.4 0 4.6-3.1 7.6-7 7.6s-7-3-7-7.6C9 12.4 11 8.4 16 5z" fill="#fff7ea"/><circle cx="16" cy="15" r="3" fill="var(--accent)"/></svg>
+      <svg class="welcome-sky" viewBox="0 0 320 96" aria-hidden="true">
+        <rect x="8"   y="46" width="34" height="50" rx="2" fill="#1d2334"/>
+        <rect x="50"  y="26" width="26" height="70" rx="2" fill="#242b40"/>
+        <rect x="84"  y="40" width="40" height="56" rx="2" fill="#1d2334"/>
+        <rect x="132" y="10" width="30" height="86" rx="2" fill="#2b3350"/>
+        <rect x="132" y="6"  width="2"  height="10" fill="#ffb03a"/>
+        <circle cx="133" cy="6" r="2.4" fill="#ff5252"/>
+        <rect x="170" y="34" width="44" height="62" rx="2" fill="#1d2334"/>
+        <rect x="222" y="22" width="26" height="74" rx="2" fill="#242b40"/>
+        <rect x="256" y="44" width="38" height="52" rx="2" fill="#1d2334"/>
+        <path d="M120 96c4-10 12-16 16-16s12 6 16 16z" fill="#101820"/>
+        <g fill="#ffb03a" opacity=".85">
+          <rect x="14" y="54" width="4" height="5"/><rect x="24" y="54" width="4" height="5"/><rect x="34" y="62" width="4" height="5"/>
+          <rect x="56" y="34" width="4" height="5"/><rect x="66" y="44" width="4" height="5"/><rect x="56" y="66" width="4" height="5"/>
+          <rect x="92" y="48" width="4" height="5"/><rect x="104" y="56" width="4" height="5"/><rect x="112" y="70" width="4" height="5"/>
+          <rect x="138" y="20" width="4" height="5"/><rect x="148" y="30" width="4" height="5"/><rect x="138" y="52" width="4" height="5"/><rect x="148" y="66" width="4" height="5"/>
+          <rect x="178" y="42" width="4" height="5"/><rect x="192" y="52" width="4" height="5"/><rect x="202" y="64" width="4" height="5"/>
+          <rect x="228" y="30" width="4" height="5"/><rect x="238" y="46" width="4" height="5"/><rect x="228" y="62" width="4" height="5"/>
+          <rect x="264" y="52" width="4" height="5"/><rect x="276" y="60" width="4" height="5"/><rect x="284" y="72" width="4" height="5"/>
+        </g>
+      </svg>
       <h1>Apna Shehar</h1>
-      <p class="welcome-sub">Build your own India — then walk its streets, in real Indian time.</p>
-      <p class="welcome-tip">Give people homes and shops — they own them like deeds, walking home when India sleeps. Press Walk to be the visitor. The cow has right of way.</p>
-      <button id="btn-start" class="btn-accent big">Start building</button>
+      <p class="welcome-sub">A whole Indian city, built and waiting — walk its streets, in real Indian time.</p>
+      <div class="welcome-chips">
+        <span class="w-chip">Pre-built Mahanagar</span>
+        <span class="w-chip">Real IST day-night</span>
+        <span class="w-chip">Own homes &amp; shops</span>
+        <span class="w-chip">Green plates = acquired</span>
+      </div>
+      <p class="welcome-tip">Doors tell you who owns what: green plates are ACQUIRED, cream boards are TO-LET. Press Walk to be the visitor. The cow has right of way.</p>
+      <button id="btn-start" class="btn-accent big">Enter the city</button>
       <button id="btn-continue" class="btn-link" hidden>Continue my saved city</button>
     </div>
   </div>
@@ -197,6 +230,7 @@
       <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20.5S3.5 15 3.5 9.3C3.5 6.4 5.7 4.5 8 4.5c1.7 0 3.2.9 4 2.3.8-1.4 2.3-2.3 4-2.3 2.3 0 4.5 1.9 4.5 4.8C20.5 15 12 20.5 12 20.5z" fill="currentColor"/></symbol>
       <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 15.5L20.5 20.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
       <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11.5L12 4.5l8 7M6 10v9.5h12V10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-door" viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="17" rx="1.6" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="14.6" cy="12.5" r="1.2" fill="currentColor"/><path d="M4 21h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
     </defs>
   </svg>
 

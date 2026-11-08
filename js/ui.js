@@ -1,7 +1,7 @@
 // ui.js — HUD, build menu, panels, notices, tile info, search, walk controls.
 // DOM layer only: game rules live in state/sim/owners; pixels in render/arts.
 
-import { S, pushNotice, recomputeStats, canPlace, place, removeAt, pinKnob, fmtMoney, clearUiDirty } from './state.js';
+import { S, MAP, pushNotice, recomputeStats, canPlace, place, removeAt, pinKnob, fmtMoney, clearUiDirty } from './state.js';
 import { BUILDINGS, CATS, TIERS, KNOBS } from './data.js';
 import { drawThumb, setGhost } from './render.js';
 import { resolveKnobs } from './arts.js';
@@ -43,7 +43,7 @@ export function setTool(key, { silent = false } = {}) {
 
 export function handleTap(tile, screen) {
   hideTileInfo();
-  if (tile.x < 0 || tile.y < 0 || tile.x >= 36 || tile.y >= 36) return;
+  if (tile.x < 0 || tile.y < 0 || tile.x >= MAP || tile.y >= MAP) return;
   if (walkActive()) { showTileInfo(tile.x, tile.y, screen); return; }
   if (!tool) { showTileInfo(tile.x, tile.y, screen); return; }
   if (tool === '__bulldoze') {
@@ -209,28 +209,31 @@ export function tick() {
   }
 }
 
-// whose deed is nearest while you walk — the reference shows "@user's home"
-// when you pass within a few metres; we do the same with [NPC] deeds.
+// whose door is nearest while you walk — owned deeds show the owner's name,
+// available buildings read as TO-LET (the street-level ownership scan)
 function updateWalkNear() {
   const el = $('walk-near');
   if (!el) return;
   const p = getPlayer();
-  let best = null, bd = 6;
-  for (const r of residentList()) {
-    for (const kind of ['home', 'shop']) {
-      const s = r[kind];
-      if (!s) continue;
-      const [tx, ty] = s.split(',').map(Number);
-      const d = Math.hypot(tx + 0.5 - p.x, ty + 0.5 - p.y);
-      if (d < bd) { bd = d; best = { name: r.name, kind, tx, ty }; }
-    }
+  let best = null, bd = 6.5;
+  const px = Math.floor(p.x), py = Math.floor(p.y);
+  for (let dy = -6; dy <= 6; dy++) for (let dx = -6; dx <= 6; dx++) {
+    const x = px + dx, y = py + dy;
+    const g = (S.grid[y] && S.grid[y][x]) || null;
+    if (!g) continue;
+    const kind = deedKindFor(g.k);
+    if (!kind) continue;
+    const d = Math.hypot(x + 0.5 - p.x, y + 0.5 - p.y);
+    if (d < bd) { bd = d; best = { x, y, kind, key: g.k, own: ownersAt(x, y)[0] || null }; }
   }
   if (!best) { el.hidden = true; return; }
-  const g = S.grid[best.ty] && S.grid[best.ty][best.tx];
-  const icon = g ? (best.kind === 'home' ? '🏠' : '🏪') : '🏚️';
-  const tail = g ? '' : ' — vacant plot';
-  const txt = `${icon} ${best.name}'s ${best.kind}${tail}`;
-  if (el.textContent !== txt) el.textContent = txt;
+  let txt;
+  if (best.own) txt = `${best.own.name}'s ${best.own.kind} · ${BUILDINGS[best.key].name}`;
+  else txt = `TO-LET · ${BUILDINGS[best.key].name} — tap to inspect`;
+  if (el.textContent !== txt) {
+    el.textContent = txt;
+    el.classList.toggle('owned', !!best.own);
+  }
   el.hidden = false;
 }
 
@@ -277,14 +280,18 @@ function showTileInfo(x, y, screen) {
           ).join('')}</span>`;
         }
       }
-      // ownership (metaverse deed book)
+      // ownership (metaverse deed book) + door status
       const own = ownersAt(x, y);
       if (own.length) {
         html += `<span class="ti-line ti-deed">${own.map(o => `${o.name} — ${o.kind}${o.vacant ? ' (vacant plot)' : ''}`).join('<br>')}`;
       }
       const kind = deedKindFor(g.k);
       if (kind) {
-        html += `<button class="btn small" id="ti-assign" style="margin-top:8px;min-height:38px;padding:6px 12px">Assign owner…</button>`;
+        const status = own.length
+          ? `<span class="ti-status owned">ACQUIRED — ${own[0].name}</span>`
+          : `<span class="ti-status vacant">TO-LET — available, no owner yet</span>`;
+        html += status;
+        html += `<button class="btn small" id="ti-assign" style="margin-top:8px;min-height:38px;padding:6px 12px">${own.length ? 'Change owner…' : 'Assign owner…'}</button>`;
       }
       if (!walkActive()) {
         const refund = Math.floor((d.cost || 0) * 0.4);

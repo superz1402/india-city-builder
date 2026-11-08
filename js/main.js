@@ -39,7 +39,11 @@ function startNew() {
   updateSpeedIcon();
 }
 function continueSaved() {
-  if (!loadGame()) { pushNotice('Save was unreadable — starting fresh.', 'warn'); startNew(); return; }
+  if (!loadGame()) {
+    startNew();
+    pushNotice('Old town save retired — welcome to the pre-built Mahanagar.', 'info');
+    return;
+  }
   clearAgents();
   centerOn(MAP / 2, MAP / 2);
   setZoom(window.innerWidth < 720 ? 0.8 : 1.05);

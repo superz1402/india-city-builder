@@ -50,7 +50,7 @@ export const BUILDINGS = {
   panchayat: { name: 'Panchayat Bhavan',cat: 'civic', cost: 5000,  upkeep: 8,  happy: 4, cover: 9, tier: 1, draw: 'panchayat', desc: 'Where the shehar debates and decides.' },
   police:    { name: 'Police Chowki',   cat: 'civic', cost: 4200,  upkeep: 8,  jobs: 3, happy: 3, cover: 8, tier: 1, draw: 'police', desc: 'Keeps the gully peace.' },
   watertank: { name: 'Water Tank',      cat: 'civic', cost: 3200,  upkeep: 4, water: 70, pw: -1, tier: 0, draw: 'watertank', desc: 'Overhead tank + hand pumps below.' },
-  substation:{ name: 'Substation',      cat: 'civic', cost: 7000,  upkeep: 6,  jobs: 1, power: 90, tier: 0, draw: 'substation', desc: 'Transformer ki gun gun — steady bijli.' },
+  substation:{ name: 'Substation',      cat: 'civic', cost: 8000,  upkeep: 6,  jobs: 1, power: 240, tier: 0, draw: 'substation', desc: 'City-grade transformer ki gun gun — steady bijli.' },
   solar:     { name: 'Solar Farm',      cat: 'civic', cost: 9000,  upkeep: 3,  power: 55, happy: 1, tier: 2, draw: 'solar', desc: 'Rooftop-of-the-city. Clean bijli.' },
   busstand:  { name: 'Bus Stand',       cat: 'civic', cost: 6000,  upkeep: 9,  jobs: 4, happy: 3, cover: 10, tier: 2, draw: 'busstand', desc: 'Blue-red buses, conductor ki awaaz.' },
 

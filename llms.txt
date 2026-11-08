@@ -17,7 +17,7 @@
 ```jsonc
 {
   "site": "...", "licence": "...", "api": "<this file>",
-  "counts": { "assets": 41, "kits": 8, "knobbed": 14, "residents": 4, ... },
+  "counts": { "assets": 48, "kits": 8, "knobbed": 21, "residents": 4, ... },
   "kits":   [ { "id": "mohalla-homes", "name": "Mohalla Homes", "category": "house", "parts": 6 } ],
   "assets": [ {
     "id": "jhuggi", "title": "Jhuggi", "type": "building", "kit": "mohalla-homes",

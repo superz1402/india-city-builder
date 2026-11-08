@@ -299,3 +299,74 @@ reconcile in code.
 **Issue hygiene:** filed #19 (polyfork adaptation acceptance list) before
 reconciliation; every criterion verified against HEAD → closed as
 implemented-in-#18 with this session's QA as independent evidence.
+
+## 2026-11-09 — v3.0 "Mahanagar Edition": whole pre-built city + door plates + UI rehaul (issue #20)
+
+**Owner directive:** "Add some Indian style houses, bunglows, companies, buildings
+and everything, build roads, cars, build a whole city. On the doors when walking
+they can see which one is acquired which one is not. Also again do rehaul of
+ui uxx."
+
+**Build (11 files touched, 1 new test harness)**
+- `js/state.js` — MAP 36→48; `generateCity()` lays out the whole Mahanagar in
+  code: avenues every 8 tiles + central chowk plaza (double-wide 23–27²),
+  bridges where vertical roads meet the river, five district bands (Civil Lines
+  bungalows/havelis/villas, CBD offices+tower+mall+hotel+bank, Old Mohalla &
+  Bazaar with faith complex + chawls, Colony flats/school/hospital/maidan/mela,
+  Industrial edge kiln/factory/textile/petrol), farmland north of the river,
+  green belt west, 6 water tanks + 4 city substations sized so day one runs
+  green. `placeRaw` hardened (water guard, idempotent counts). Reserved deed
+  constants `CITY_DEED_TILES` + pop fill 42% + tier auto-unlock.
+- `js/data.js` — 7 new buildings: chawl, villa, mall (Bazaar), office/tower/
+  hotel/petrol (Companies); category renamed Industry→Companies; knobs for all
+  seven (wash, porch, glass, crown, signage, board, paint); substation upgraded
+  to city grade (240 MW, ₹8,000); start money ₹45,000.
+- `js/arts.js` — 7 new draw cases (chawl with drying-lines, villa with car-porch
+  knob, glass office, striped tower with blinking beacon, hotel portico, mall
+  atrium, petrol canopy); new vehicles `car` + `taxi` (kaali-peeli);
+  `drawDoorPlate` (ACQUIRED nameplate / TO-LET board, night glow).
+- `js/owners.js` — all four [NPC] residents now hold home + shop in the new city
+  (8 code deeds); cap of four unchanged.
+- `js/agents.js` — cars & taxis join traffic (companies raise car share); caps
+  raised for city scale (people 110, vehicles 26).
+- `js/render.js` — walk-mode door plates depth-sorted with buildings + distance
+  fade; plan-mode green/amber doorstep dots; procedural street lamps along roads
+  at night (no tiles consumed); night light pass capped at 380 sampled lights
+  for city-scale perf.
+- `js/ui.js` — MAP import (kills hardcoded 36); walk-near chip now scans ALL
+  deed doors (owned → "X's home", else "TO-LET · Building — tap to inspect");
+  tile card gains ACQUIRED/TO-LET status pill + Change owner…; emoji removed.
+- `js/main.js` — old 36×36 saves retire gracefully into the new city map.
+- `index.html` + `css/style.css` — FULL UI/UX rehaul ("Mahanagar Metro"):
+  dark glass design system, Outfit display font (Google Fonts + system
+  fallback), floating HUD slab + build dock, gradient CTAs, bottom-sheet
+  panels on phones, new welcome with skyline SVG + feature chips, walk legend
+  chip (Acquired/TO-LET), glass action dock, panel/notice animations. All v2
+  element IDs preserved.
+- `scripts/test-city.mjs` — NEW headless harness: deed-tile sync, water safety,
+  road BFS connectivity, economy scale, knob registry, 4-NPC cap.
+- Fixed pre-existing bug: `recomputeStats` read `d.power` for demand but all
+  consumers declare `d.pw` — power use was always 0 and load-shedding could
+  never trigger. Now pw counts as demand (city: 960 gen vs 909 use, green).
+- `catalog.json` regenerated (48 assets, 21 knobbed) + `llms.txt` counts.
+
+**QA (agent-browser, headless Chromium, zero console/page errors at every step)**
+- `node scripts/test-city.mjs` → ALL GREEN (1,352 tiles; 456/458 road tiles
+  connected; all 8 deed tiles hold the intended buildings; 6,122 homes;
+  2,121 jobs; water/power/food green; exactly four [NPC] residents).
+- Boot → welcome → Enter the city → night overview (12:56 am IST: dark sky,
+  street lamps glowing, whole district grid visible) — docs/qa-1/qa-2.
+- Walk mode at street level: TO-LET boards on every available building, green
+  ACQUIRED [NPC] Ramu + [NPC] Arjun plates, legend chip, "TO-LET · Company
+  Office — tap to inspect" chip — docs/qa-3.
+- Tap dhaba door → tile card "ACQUIRED — [NPC] Arjun" + Change owner… — docs/qa-4.
+- Sim ran live through days 1→4 with pop 2,571→3,356, Happy 100%, treasury
+  compounding (₹45k → ₹3.3L) — economy healthy.
+- Mobile 390×844: found + fixed two regressions (walk-chip/legend overlap and
+  clipped pop chip at 360px; zoom-out button under the dock → --bar-h 156px)
+  and re-verified — docs/qa-5*/qa-6*.
+
+**Ops**
+- AGENTS.md §11 added (Mahanagar operating rules); README hero + feature list
+  rewritten for v3. Pushed; issue #20 closed with evidence; stale v2 issues
+  #14/#15/#16 closed with evidence (features shipped in v2.0, verified live).

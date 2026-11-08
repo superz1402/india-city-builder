@@ -86,8 +86,9 @@ export function newGame(seed = (Date.now() % 100000)) {
   generateCity();
   recomputeStats(true);
 
-  // a pre-built city arrives lived-in: fill most of the housing, unlock the tier
-  S.pop = Math.min(S.stats.homes, Math.max(150, Math.round(S.stats.homes * 0.62)));
+  // a pre-built city arrives lived-in: fill a healthy share of the housing
+  // (civic infra below is sized so day one runs green, growth pressures it later)
+  S.pop = Math.min(S.stats.homes, Math.max(150, Math.round(S.stats.homes * 0.42)));
   S.tierIdx = currentTierIdx();
   pushNotice('Welcome to Apna Shehar — a whole Mahanagar, built and waiting. Walk its streets!', 'info');
 }
@@ -161,12 +162,14 @@ export function generateCity() {
   const civilB = ['bungalow', 'villa', 'haveli', 'bungalow'];
   ringFill(10, 10, 16, 16, civilA, reserved, rstate);
   courtyardFill(11, 11, 15, 15, ['tree', 'tree', 'park', 'tree']);
+  placeRaw(15, 13, 'watertank');
   ringFill(18, 10, 24, 16, civilB, reserved, rstate);
   courtyardFill(19, 11, 23, 15, ['tree', 'park', 'tree']);
   ringFill(26, 10, 32, 16, civilA, reserved, rstate);
   courtyardFill(27, 11, 31, 15, ['tree', 'tree', 'park']);
   ringFill(34, 10, 40, 16, civilB, reserved, rstate);
   courtyardFill(35, 11, 39, 15, ['tree', 'park', 'tree', 'tree']);
+  placeRaw(37, 13, 'watertank');
   ringFill(42, 10, 47, 16, ['mango', 'wheat', 'tree', 'mango'], reserved, rstate);
 
   // ---- Block band B (y 18–24): CBD — companies, tower, mall, hotel ----
@@ -188,7 +191,7 @@ export function generateCity() {
   placeRaw(13, 29, 'mandir'); placeRaw(11, 29, 'masjid');
   placeRaw(15, 29, 'gurudwara'); placeRaw(13, 31, 'church'); placeRaw(13, 27, 'tree');
   ringFill(18, 26, 24, 32, ['chai', 'kirana', 'bazaar', 'chai', 'saree', 'kirana', 'dhaba', 'chai', 'bazaar'], reserved, rstate);
-  placeRaw(21, 29, 'chai'); placeRaw(19, 31, 'tree');
+  placeRaw(21, 29, 'chai'); placeRaw(19, 31, 'tree'); placeRaw(23, 31, 'watertank');
   ringFill(26, 26, 32, 32, ['chawl', 'pakka', 'chawl', 'pakka', 'kaccha', 'chawl'], reserved, rstate);
   placeRaw(29, 29, 'watertank'); placeRaw(27, 27, 'police');
   ringFill(34, 26, 40, 32, ['pakka', 'kaccha', 'pakka', 'chai', 'pakka'], reserved, rstate);
@@ -211,13 +214,16 @@ export function generateCity() {
   ringFill(10, 42, 16, 47, ['wheat', 'wheat', 'dairy', 'wheat'], reserved, rstate);
   ringFill(18, 42, 24, 47, ['paddy', 'wheat', 'paddy', 'dairy'], reserved, rstate);
   ringFill(26, 42, 32, 47, ['kiln', 'wheat', 'tree', 'kiln'], reserved, rstate);
+  placeRaw(29, 45, 'watertank');
   ringFill(34, 42, 40, 47, ['factory', 'textile', 'petrol', 'substation'], reserved, rstate);
+  placeRaw(36, 44, 'factory'); placeRaw(38, 45, 'textile'); placeRaw(35, 43, 'petrol'); placeRaw(39, 44, 'substation');
   ringFill(42, 42, 47, 47, ['mango', 'tree', 'mango'], reserved, rstate); // pond sits east
 
   // ---- Green belt west of the first avenue + river north bank ----
   for (const [gy0, gy1] of [[10, 16], [18, 24], [26, 32], [34, 40]]) {
     courtyardFill(0, gy0, 8, gy1, ['tree', 'wheat', 'tree', 'park', 'tree']);
   }
+  placeRaw(5, 29, 'watertank'); placeRaw(7, 37, 'substation'); placeRaw(7, 21, 'substation');
   for (let x = 0; x < MAP; x++) for (let y = 0; y <= 8; y++) {
     if (S.grid[y][x] || S.terrain[y][x].w) continue;
     if ((x * 7 + y * 11) % 4 === 0) placeRaw(x, y, y <= 2 ? ((x % 3) ? 'wheat' : 'mango') : 'tree');
@@ -343,7 +349,9 @@ export function recomputeStats(silent = false) {
     st.food += d.food || 0;
     st.waterCap += d.water || 0;
     st.powerGen += Math.max(0, d.power || 0);
-    st.powerUse += Math.max(0, -(d.power || 0));
+    // demand: `power` (negative = demand, unused by current defs) plus `pw`
+    // (the negative demand flag every consumer building actually carries)
+    st.powerUse += Math.max(0, -(d.power || 0)) + Math.max(0, -(d.pw || 0));
     st.income += d.income || 0;
     st.upkeep += d.upkeep || 0;
     st.pol += d.pol || 0;
@@ -383,7 +391,7 @@ export function currentTierIdx() {
 }
 
 // helpers used across modules
-export function gridAt(x, y) { return (x < 0 || y < 0 || x >= MAP || y >= MAP) ? null : S.grid[y][x]; }
+export function gridAt(x, y) { return (x < 0 || y < 0 || x >= MAP || y >= MAP || !S.grid[y]) ? null : S.grid[y][x]; }
 export function isWater(x, y) { return (x < 0 || y < 0 || x >= MAP || y >= MAP) ? false : S.terrain[y][x].w; }
 export function isRoad(x, y) { const g = gridAt(x, y); return !!g && (g.k === 'road' || g.k === 'bridge'); }
 export function fmtMoney(n) { return '₹' + Math.round(n).toLocaleString('en-IN'); }
