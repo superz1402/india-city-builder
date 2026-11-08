@@ -247,6 +247,7 @@ export function generateCity() {
   for (const [gy0, gy1] of [[10, 16], [18, 24], [26, 32], [34, 40]]) {
     courtyardFill(0, gy0, 8, gy1, ['tree', 'wheat', 'tree', 'park', 'tree', 'mango']);
   }
+  courtyardFill(0, 42, 8, 47, ['wheat', 'tree', 'paddy', 'mango']); // the south-west corner was bare dust
   placeRaw(5, 29, 'watertank'); placeRaw(7, 37, 'substation'); placeRaw(7, 21, 'substation');
   // dense riverside: orchard rows up north, a breathing tree wall below the bank
   for (let x = 0; x < MAP; x++) for (let y = 0; y <= 8; y++) {
@@ -424,6 +425,17 @@ export function gridAt(x, y) { return (x < 0 || y < 0 || x >= MAP || y >= MAP ||
 export function isWater(x, y) { return (x < 0 || y < 0 || x >= MAP || y >= MAP) ? false : S.terrain[y][x].w; }
 export function isRoad(x, y) { const g = gridAt(x, y); return !!g && (g.k === 'road' || g.k === 'bridge'); }
 export function fmtMoney(n) { return '₹' + Math.round(n).toLocaleString('en-IN'); }
+
+// neighbourhood names for the walk-HUD place chip (you always know where you are)
+export function districtOf(x, y) {
+  if (y < 9) return 'River Bank';
+  if (x < 9) return y < 42 ? 'Green Belt' : 'West Fields';
+  if (y <= 16) return x >= 42 ? 'East Bungalows' : 'Civil Lines';
+  if (y <= 24) return x >= 42 ? 'East End' : 'CBD — City Centre';
+  if (y <= 32) return x >= 42 ? 'East Bazaar' : 'Old Mohalla & Bazaar';
+  if (y <= 40) return 'Colony';
+  return x >= 42 ? 'Pond Side' : 'Industrial Edge';
+}
 
 // walkers can stand on open land and roads/bridges; buildings, trees, water block
 export function isWalkable(x, y) {

@@ -12,6 +12,7 @@ import { isNight, hourOfDay, seasonOf } from './sim.js';
 import { getAgents } from './agents.js';
 import { getPlayer, getWalkers, walkActive } from './walk.js';
 import { lensBegin, lensCompose, setLensBand, isLensOn } from './tiltshift.js';
+import { fpvRender } from './fpv.js';
 
 let ctx = null, canvas = null, W = 0, H = 0, dpr = 1;
 let vctx = null; // the visible canvas context (when the lens is off, this IS ctx)
@@ -51,6 +52,9 @@ function skyColors(h) {
 
 export function render(now) {
   const t = now / 1000;
+  // street level is a different camera entirely — the true first-person
+  // renderer owns walk mode (you ARE the walker; see js/fpv.js)
+  if (walkActive()) { fpvRender(now); return; }
   const night = isNight();
   const hour = hourOfDay();
   const season = seasonOf(S.day).id;
@@ -91,28 +95,12 @@ export function render(now) {
     if (!deedMap.has(key)) deedMap.set(key, []);
     deedMap.get(key).push({ name: d.name, kind });
   }
-  const walking = walkActive();
-  const pl = walking ? getPlayer() : null;
-
-  // ---- lens: aim the sharp strip at the subject ("band follows one subject")
-  // plan mode keeps it on the map focus; walk mode tracks YOU
-  if (isLensOn()) {
-    let fy = cam.py, fw = 0.16;
-    if (walking && pl) {
-      const pi = isoOf(pl.x, pl.y);
-      const pp = worldToScreen(pi.x, pi.y + TH / 2);
-      fy = Math.max(0.3, Math.min(0.72, pp.y / H));
-      fw = 0.13;
-    }
-    setLensBand(fy, fw, Math.sin(cam.rot) * 0.05);
-  }
 
   // ---- terrain pass + collect depth-sorted drawables ----
   // v5 ground: a warm dust ramp (no more olive mud), flecked texture, banked
   // water with a pale shelf; the plate system is capped and distance-ranked
   // so the street keeps its hierarchy.
   const drawables = [];
-  const plates = [];
   const roadNb = (x, y) => { const g = gridAt(x, y); return !!g && (g.k === 'road' || g.k === 'bridge'); };
   const GROUND = ['#c9b78a', '#c2ae7e', '#d1c096', '#bda674', '#c5b283'];
   for (let y = y0; y <= y1; y++) {
@@ -124,14 +112,13 @@ export function render(now) {
       if (tv.w) {
         const shimmer = 0.5 + 0.5 * Math.sin(t * 1.8 + tv.v);
         const bank = !(isWater(x - 1, y) && isWater(x + 1, y) && isWater(x, y - 1) && isWater(x, y + 1));
+        const amp = night ? 5 : 12, dim = night ? 0.7 : 1; // night water calms down (no checkerboard)
+        const br = bank ? 74 : 54, bg = bank ? 142 : 122, bb = bank ? 172 : 154;
+        ctx.fillStyle = `rgb(${Math.round((br + shimmer * amp) * dim)},${Math.round((bg + shimmer * amp * 0.8) * dim)},${Math.round((bb + shimmer * amp * 0.8) * dim)})`;
+        diamond(p.x, p.y); ctx.fill();
         if (bank) {
-          ctx.fillStyle = `rgb(${74 + shimmer * 12},${142 + shimmer * 10},${172 + shimmer * 10})`;
-          diamond(p.x, p.y); ctx.fill();
-          ctx.fillStyle = 'rgba(228,244,248,.25)'; // pale shelf at the waterline
+          ctx.fillStyle = night ? 'rgba(200,228,238,.16)' : 'rgba(228,244,248,.25)'; // pale shelf at the waterline
           diamond(p.x, p.y + 1, 0.9, 0.9); ctx.fill();
-        } else {
-          ctx.fillStyle = `rgb(${54 + shimmer * 12},${122 + shimmer * 10},${154 + shimmer * 12})`;
-          diamond(p.x, p.y); ctx.fill();
         }
       } else {
         ctx.fillStyle = GROUND[tv.v % GROUND.length];
@@ -145,17 +132,15 @@ export function render(now) {
       if (gd) {
         drawables.push({ sy: p.y, k: gd.k, x, y, sd: gd.seed, kb: gd.knobs || null,
           rd: gd.k === 'road' ? { n: roadNb(x, y - 1), s: roadNb(x, y + 1), w: roadNb(x - 1, y), e: roadNb(x + 1, y) } : null });
-        // ownership at the door: plates at street level, status dots on the map
+        // ownership at a glance (plan mode): a quiet doorstep dot on homes and
+        // shops, glowing green only where a deed is assigned. Street-level
+        // plates live in the first-person renderer (fpv.js) — near the door
+        // only, hanging small (plate discipline, issue #23).
         const kind = deedableKind(gd.k);
         if (kind) {
           const own = deedMap.get(x + ',' + y);
-          if (walking && pl) {
-            const dist = Math.hypot(x + 0.5 - pl.x, y + 0.5 - pl.y);
-            const lim = own && own.length ? 9.5 : 6.2; // ACQUIRED carries farther than TO-LET whispers
-            if (dist < lim) {
-              plates.push({ dist, sx: p.x, sy: p.y, info: own && own.length ? { owned: true, name: own[0].name, kind: own[0].kind } : { owned: false, kind } });
-            }
-          } else if (!walking) {
+          const cat = BUILDINGS[gd.k] && BUILDINGS[gd.k].cat;
+          if (own || cat === 'house' || cat === 'shop') {
             drawables.push({ sy: p.y + 1.5, sx: p.x, sy2: p.y + 1.5, dot: { owned: !!(own && own.length) } });
           }
         }
@@ -163,17 +148,11 @@ export function render(now) {
     }
   }
 
-  // nearest plates only, so ten signs never shout over one street
-  plates.sort((a, b) => a.dist - b.dist);
-  for (const pl2 of plates.slice(0, 9)) {
-    drawables.push({ sy: pl2.sy + 2, sx: pl2.sx, sy2: pl2.sy + 2, plate: { dist: pl2.dist, info: pl2.info } });
-  }
-
   // ---- ambient agents (people, vehicles, cows) ----
   // time-lapse rhythm (lens on, plan mode): agents step in 0.16-tile quantised
-  // hops — wind-up toys on a model railway. Walk mode stays real time; cows
-  // are above the law in both.
-  const tlStep = isLensOn() && !walking ? 0.16 : 0;
+  // hops — wind-up toys on a model railway. Walk mode (the first-person
+  // renderer) stays real time; cows are above the law in both.
+  const tlStep = isLensOn() ? 0.16 : 0;
   const agents = getAgents();
   for (const a of agents) {
     let ax = tlStep && a.kind !== 'cow' ? Math.round(a.x / tlStep) * tlStep : a.x;
@@ -188,21 +167,8 @@ export function render(now) {
     drawables.push({ sy: p.y + 0.5, agent: a, sx: p.x, sy2: p.y });
   }
 
-  // ---- walk mode: true first person — YOU are the walker. No avatar body,
-  // no "You" tag: a soft ground ring + a heading chevron mark your spot
-  // (owner directive, issue #23; deviation from buildacountry's third-person
-  // street view is documented in docs/WALK-REFERENCE.md).
-  if (walking) {
-    const pi = isoOf(pl.x, pl.y);
-    const pp = worldToScreen(pi.x, pi.y + TH / 2);
-    drawables.push({ sy: pp.y + 0.55, fp: true, sx: pp.x, sy2: pp.y });
-    for (const w of getWalkers()) {
-      const wi = isoOf(w.x, w.y);
-      const wp = worldToScreen(wi.x, wi.y + TH / 2);
-      if (wp.x < -60 || wp.x > W + 60 || wp.y < -80 || wp.y > H + 80) continue;
-      drawables.push({ sy: wp.y + 0.6, person: w, sx: wp.x, sy2: wp.y, name: w.name });
-    }
-  }
+  // ---- street level never reaches here: walk mode is owned end-to-end by
+  // js/fpv.js (true first person — you ARE the walker, issue #23).
 
   // ---- sort & draw world objects ----
   drawables.sort((a, b) => a.sy - b.sy);
@@ -233,35 +199,6 @@ export function render(now) {
       if (a.kind === 'cow') drawCow(ctx, 0, 0, t, a.ph);
       else if (a.kind === 'person') drawPerson(ctx, 0, 0, a, t);
       else drawVehicle(ctx, 0, 0, a, t, night);
-      ctx.restore();
-    } else if (dr.fp) {
-      // first-person footprint: soft ring at your feet + heading chevron
-      const z = Math.max(1, cam.z);
-      ctx.save();
-      ctx.translate(dr.sx, dr.sy2);
-      ctx.fillStyle = 'rgba(255,176,58,.16)';
-      ctx.beginPath(); ctx.ellipse(0, 0, 8 * z, 3.4 * z, 0, 0, 7); ctx.fill();
-      const ang = pl.hAng || 0;
-      const moving = pl.moving;
-      ctx.globalAlpha = moving ? 0.6 : 0.16;
-      ctx.translate(Math.cos(ang) * 16 * z, Math.sin(ang) * 8 * z);
-      ctx.rotate(ang);
-      ctx.fillStyle = '#ffb03a';
-      ctx.beginPath();
-      ctx.moveTo(7 * z, 0); ctx.lineTo(-3 * z, -4.6 * z); ctx.lineTo(-1 * z, 0); ctx.lineTo(-3 * z, 4.6 * z);
-      ctx.closePath(); ctx.fill();
-      ctx.restore();
-      if (pl.emote) drawEmoteBubble(dr.sx, dr.sy2 - 26 * z, pl.emote, t);
-    } else if (dr.plate) {
-      // door plate: ACQUIRED nameplate or TO-LET board, fading with distance
-      ctx.save();
-      ctx.translate(dr.sx, dr.sy2);
-      const ps = Math.max(0.85, cam.z);
-      ctx.scale(ps, ps);
-      setLightOrigin(dr.sx, dr.sy2, ps);
-      ctx.globalAlpha = Math.min(1, Math.max(0, (9.5 - dr.plate.dist) / 2.2));
-      drawDoorPlate(ctx, 0, 0, dr.plate.info, t, night);
-      ctx.globalAlpha = 1;
       ctx.restore();
     } else if (dr.dot) {
       // plan-mode doorstep status dot: green = acquired, amber = TO-LET
@@ -319,7 +256,7 @@ export function render(now) {
       ctx.beginPath(); ctx.arc(p.x, p.y - top - 1.5, 1.8 * Math.max(0.8, cam.z), 0, 7); ctx.fill();
       lights.push({ x: p.x, y: p.y - top, r: 30, c: 'rgba(255,200,110,.20)' });
     }
-    const na = hour >= 19.5 || hour < 5 ? 0.42 : 0.26;
+    const na = hour >= 19.5 || hour < 5 ? 0.55 : 0.3;
     ctx.fillStyle = `rgba(12,16,52,${na})`;
     ctx.fillRect(0, 0, W, H);
     ctx.globalCompositeOperation = 'lighter';
@@ -367,7 +304,7 @@ export function render(now) {
   if (season === 'summer') { ctx.fillStyle = 'rgba(255,150,40,.05)'; ctx.fillRect(0, 0, W, H); }
 
   // ---- cloud shadows sweeping the model (lens native move, day only) ----
-  if (isLensOn() && !walking && !night && season !== 'monsoon') cloudShadows(t);
+  if (isLensOn() && !night && season !== 'monsoon') cloudShadows(t);
 
   // ---- build ghost (plan mode only) ----
   if (ghost && ghost.x != null) {

@@ -1,0 +1,147 @@
+diff --git a/css/style.css b/css/style.css
+index 02beacb..236219c 100755
+--- a/css/style.css
++++ b/css/style.css
+@@ -577,3 +577,47 @@ body.walking .festival-banner { top: calc(var(--hud-h) + env(safe-area-inset-top
+   .walk-right { gap: 7px; flex-wrap: wrap; width: 206px; justify-content: flex-end; row-gap: 9px; border-radius: 26px; }
+   .pill-btn { padding: 0 14px; font-size: 13px; }
+ }
++
++/* ================= v5 true first-person HUD (issue #23) ================= */
++
++/* centre reference — a whisper, not a target */
++#crosshair {
++  position: fixed; left: 50%; top: 50%;
++  width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px;
++  border-radius: 50%;
++  background: rgba(255, 236, 200, .85);
++  box-shadow: 0 0 0 2px rgba(16, 13, 8, .28), 0 0 10px rgba(255, 176, 58, .35);
++  z-index: 22; pointer-events: none;
++  display: none;
++}
++body.walking #crosshair { display: block; }
++
++/* pocket map: roads, deed homes and the marigold you */
++.walk-map {
++  position: fixed; right: 10px;
++  top: calc(var(--hud-h) + env(safe-area-inset-top) + 14px);
++  width: 124px; height: 124px;
++  border-radius: 14px;
++  border: 1px solid var(--chrome-edge);
++  box-shadow: var(--shadow-soft);
++  z-index: 21; display: none;
++}
++body.walking .walk-map { display: block; }
++@media (max-width: 719px) { .walk-map { width: 92px; height: 92px; top: auto; bottom: 178px; } }
++
++/* first-time look hint, retires itself */
++.look-hint {
++  position: fixed; left: 50%; transform: translateX(-50%);
++  bottom: calc(150px + env(safe-area-inset-bottom));
++  background: var(--chrome); color: var(--ink);
++  border: 1px solid var(--chrome-edge);
++  border-radius: 999px; padding: 8px 16px;
++  font-size: 13px; font-weight: 600; white-space: nowrap;
++  box-shadow: var(--shadow-soft);
++  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
++  z-index: 22; pointer-events: none;
++  display: none;
++}
++body.walking .look-hint[hidden] { display: none; }
++body.walking .look-hint:not([hidden]) { display: block; }
++@media (max-width: 719px) { .look-hint { bottom: 226px; font-size: 12px; max-width: 92vw; white-space: normal; text-align: center; } }
+diff --git a/index.html b/index.html
+index b224e10..a91ba5c 100755
+--- a/index.html
++++ b/index.html
+@@ -82,6 +82,9 @@
+       <span class="lg owned"></span> Acquired
+       <span class="lg vacant"></span> TO-LET
+     </div>
++    <canvas id="walk-map" class="walk-map" width="124" height="124" aria-label="Pocket map of the city" title="You are the marigold arrow"></canvas>
++    <div id="look-hint" class="look-hint" hidden>Click to lock the mouse and look · WASD walk · Q/E turn · Shift run</div>
++    <div id="crosshair" aria-hidden="true"></div>
+     <div id="walk-near" class="walk-near" hidden></div>
+     <div id="joy" class="joy" aria-label="Walking joystick" title="Drag to walk">
+       <div id="joy-knob" class="joy-knob"></div>
+diff --git a/js/ui.js b/js/ui.js
+index 1affbde..2b2ec6d 100755
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -12,7 +12,7 @@ import { seasonOf } from './sim.js';
+ import { istLabel, rushLevel } from './clock.js';
+ import { isLensOn, setLensOn } from './tiltshift.js';
+ import { centerOn, setZoom, orbitBy } from './iso.js';
+-import { walkActive, enterWalk, exitWalk, doEmote, setJoystick, setRun, nearbyCount, getPlayer, teleportTo, getView } from './walk.js';
++import { walkActive, enterWalk, exitWalk, doEmote, setJoystick, setRun, nearbyCount, getPlayer, teleportTo, getView, getWalkers } from './walk.js';
+ import { RESIDENTS, residentList, ownersAt, assignDeed, vacateDeed, homeOf, shopOf, statusOf, deedFor } from './owners.js';
+ 
+ const $ = (id) => document.getElementById(id);
+@@ -512,8 +512,10 @@ function initWalkControls() {
+   $('btn-walk').addEventListener('click', () => {
+     sfx.click();
+     enterWalk();
++    const hint = $('look-hint');
++    if (hint) { hint.hidden = false; clearTimeout(initWalkControls.hintT); initWalkControls.hintT = setTimeout(() => { hint.hidden = true; }, 7000); }
+     const phone = matchMedia('(pointer: coarse)').matches || window.innerWidth < 720;
+-    pushNotice(phone ? 'You are on the street — joystick to walk, drag to look around.' : 'You are on the street. WASD or arrows to walk, Shift to run, drag to look around.', 'good');
++    pushNotice(phone ? 'You are on the street — joystick to walk, drag to look around.' : 'You are on the street. WASD to walk, Q/E or arrows to turn, Shift to run. Click to lock the mouse and look; 1-4 to emote.', 'good');
+   });
+   $('btn-exit-walk').addEventListener('click', () => { sfx.click(); exitWalk(); });
+   $('btn-run').addEventListener('click', () => {
+@@ -525,6 +527,55 @@ function initWalkControls() {
+   });
+   $('btn-rot-l').addEventListener('click', () => { orbitBy(-Math.PI / 4); sfx.click(); });
+   $('btn-rot-r').addEventListener('click', () => { orbitBy(Math.PI / 4); sfx.click(); });
++  // any look input retires the first-time hint
++  const hint = $('look-hint');
++  if (hint) {
++    const retire = () => { hint.hidden = true; };
++    document.getElementById('game').addEventListener('pointerdown', retire, { once: false });
++  }
++}
++
++// ---------- walk minimap (pocket GPS: roads, deeds, you) ----------
++function drawWalkMap() {
++  const cv = $('walk-map');
++  if (!cv || !S.grid.length) return;
++  const now = performance.now();
++  if (drawWalkMap.last && now - drawWalkMap.last < 280) return;
++  drawWalkMap.last = now;
++  const c2 = cv.getContext('2d');
++  const N = cv.width, sc = N / MAP;
++  c2.clearRect(0, 0, N, N);
++  c2.fillStyle = '#141a26';
++  c2.fillRect(0, 0, N, N);
++  for (let y = 0; y < MAP; y++) for (let x = 0; x < MAP; x++) {
++    const tv = S.terrain[y] && S.terrain[y][x];
++    const g = S.grid[y][x];
++    if (tv && tv.w) c2.fillStyle = '#2e5d7a';
++    else if (g && (g.k === 'road' || g.k === 'bridge')) c2.fillStyle = '#93a7b1';
++    else if (g) c2.fillStyle = '#4d463a';
++    else continue;
++    c2.fillRect(x * sc, y * sc, sc + 0.5, sc + 0.5);
++  }
++  // deed markers: green = acquired, amber = TO-LET
++  for (const d of RESIDENTS.map(deedFor)) {
++    if (!d || !d.home) continue;
++    const [hx, hy] = d.home.split(',').map(Number);
++    c2.fillStyle = '#35d49a';
++    c2.fillRect(hx * sc - 1, hy * sc - 1, sc + 2, sc + 2);
++  }
++  // the four [NPC]s
++  c2.fillStyle = '#e8ecf4';
++  for (const w of getWalkers()) c2.fillRect(w.x * sc - 1, w.y * sc - 1, 2.4, 2.4);
++  // you: a heading arrow
++  const p = getPlayer(), v = getView();
++  c2.save();
++  c2.translate(p.x * sc, p.y * sc);
++  c2.rotate(v.yaw + Math.PI); // yaw 0 faces north (−y) → arrow up
++  c2.fillStyle = '#ffb03a';
++  c2.beginPath();
++  c2.moveTo(0, -5); c2.lineTo(3.4, 4); c2.lineTo(0, 2.2); c2.lineTo(-3.4, 4);
++  c2.closePath(); c2.fill();
++  c2.restore();
+ }
+ 
+ // ---------- tilt-shift miniature lens ----------
