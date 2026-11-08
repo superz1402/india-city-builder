@@ -1,0 +1,45 @@
+name: health
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Syntax-check every game module
+        run: |
+          fail=0
+          for f in js/*.js; do
+            node --input-type=module --check < "$f" || fail=1
+          done
+          exit $fail
+
+      - name: Required files exist
+        run: |
+          for f in index.html css/style.css js/main.js js/state.js js/data.js \
+                   js/iso.js js/render.js js/arts.js js/agents.js js/sim.js \
+                   js/events.js js/ui.js js/audio.js js/save.js \
+                   README.md AGENTS.md worklog.md docs/screenshot.png; do
+            [ -f "$f" ] || { echo "MISSING: $f"; exit 1; }
+          done
+
+      - name: Guard against committed secrets
+        run: |
+          if grep -rInE "(ghp|gho|github_pat)_[A-Za-z0-9_]{16,}" --exclude-dir=.git . ; then
+            echo "Token-like string found — rotate the token and remove it from history."
+            exit 1
+          fi
+
+      - name: Index.html sanity
+        run: |
+          grep -q "Apna Shehar" index.html
+          grep -q 'id="game"' index.html
+          grep -q 'js/main.js' index.html

@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#e8850c">
+<meta name="description" content="Apna Shehar — build your own Indian city, from chhota gaon to mahanagar. A free browser city-builder with mandirs, dhabas, autos, festivals and sacred cows.">
+<title>Apna Shehar — India City Builder</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23e8850c'/%3E%3Cpath d='M16 5c5 3.4 7 7.4 7 11.4 0 4.6-3.1 7.6-7 7.6s-7-3-7-7.6C9 12.4 11 8.4 16 5z' fill='%23fff7ea'/%3E%3Ccircle cx='16' cy='15' r='3' fill='%23e8850c'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <canvas id="game" aria-label="City map. Drag to pan, pinch or scroll to zoom, tap a tile to build." role="img"></canvas>
+
+  <!-- Top HUD -->
+  <header id="hud" class="hud">
+    <div class="hud-brand">
+      <svg viewBox="0 0 32 32" class="logo" aria-hidden="true"><rect width="32" height="32" rx="7" fill="var(--accent)"/><path d="M16 5c5 3.4 7 7.4 7 11.4 0 4.6-3.1 7.6-7 7.6s-7-3-7-7.6C9 12.4 11 8.4 16 5z" fill="#fff7ea"/><circle cx="16" cy="15" r="3" fill="var(--accent)"/></svg>
+      <div class="brand-text">
+        <strong>Apna Shehar</strong>
+        <span id="town-title">Chhota Gaon</span>
+      </div>
+    </div>
+    <div class="hud-stats" role="status" aria-live="polite">
+      <span class="stat" title="Treasury"><svg class="ic" aria-hidden="true"><use href="#i-rupee"/></svg><b id="st-money" class="tnum">0</b></span>
+      <span class="stat" title="Population"><svg class="ic" aria-hidden="true"><use href="#i-people"/></svg><b id="st-pop" class="tnum">0</b></span>
+      <span class="stat" title="Happiness"><svg class="ic" aria-hidden="true"><use href="#i-smile"/></svg><b id="st-happy">—</b></span>
+      <span class="stat" title="Day and season"><svg class="ic" aria-hidden="true"><use href="#i-sun"/></svg><b id="st-day" class="tnum">Day 1</b></span>
+    </div>
+    <div class="hud-actions">
+      <button id="btn-speed" class="icon-btn" aria-label="Pause or resume" title="Pause / play (Space)"><svg class="ic" aria-hidden="true"><use href="#i-pause"/></svg></button>
+      <button id="btn-sound" class="icon-btn" aria-label="Toggle sound" title="Sound on / off"><svg class="ic" aria-hidden="true"><use href="#i-sound-off"/></svg></button>
+      <button id="btn-menu" class="icon-btn" aria-label="Open menu" title="Menu"><svg class="ic" aria-hidden="true"><use href="#i-menu"/></svg></button>
+    </div>
+  </header>
+
+  <!-- Festival banner: the one loud thing when active -->
+  <div id="festival-banner" class="festival-banner" hidden>
+    <svg class="ic" aria-hidden="true"><use href="#i-diya"/></svg>
+    <span id="festival-text"></span>
+    <button id="btn-celebrate" class="btn-accent">Celebrate</button>
+  </div>
+
+  <!-- Notice feed -->
+  <div id="feed" class="feed" aria-live="polite" aria-label="City news"></div>
+
+  <!-- Bottom build bar -->
+  <nav id="buildbar" class="buildbar" aria-label="Build menu">
+    <div id="cat-tabs" class="cat-tabs" role="tablist"></div>
+    <div id="build-items" class="build-items" role="tabpanel"></div>
+  </nav>
+
+  <!-- Camera controls (bottom right) -->
+  <div class="cam">
+    <button id="cam-in" class="icon-btn" aria-label="Zoom in"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg></button>
+    <button id="cam-out" class="icon-btn" aria-label="Zoom out"><svg class="ic" aria-hidden="true"><use href="#i-minus"/></svg></button>
+  </div>
+
+  <!-- Tool status chip -->
+  <div id="tool-chip" class="tool-chip" hidden>
+    <span id="tool-chip-text"></span>
+    <button id="tool-cancel" class="icon-btn small" aria-label="Cancel tool"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button>
+  </div>
+
+  <!-- Menu panel -->
+  <div id="menu-panel" class="panel" hidden role="dialog" aria-label="Menu">
+    <div class="panel-head"><h2>Menu</h2><button class="icon-btn" data-close aria-label="Close menu"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></div>
+    <button class="btn" id="btn-stats">Shehar Report</button>
+    <button class="btn" id="btn-help">How to play</button>
+    <button class="btn" id="btn-save">Save now</button>
+    <button class="btn danger" id="btn-new">New city…</button>
+    <p class="panel-foot">Made with pride for every gully of Bharat. <a href="https://github.com/superz1402/india-city-builder" target="_blank" rel="noopener">Source on GitHub</a></p>
+  </div>
+
+  <!-- Stats panel -->
+  <div id="stats-panel" class="panel" hidden role="dialog" aria-label="City report">
+    <div class="panel-head"><h2>Shehar Report</h2><button class="icon-btn" data-close aria-label="Close report"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></div>
+    <div id="stats-body" class="stats-body"></div>
+  </div>
+
+  <!-- Help panel -->
+  <div id="help-panel" class="panel" hidden role="dialog" aria-label="How to play">
+    <div class="panel-head"><h2>How to play</h2><button class="icon-btn" data-close aria-label="Close help"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></div>
+    <div class="help-body">
+      <p><b>1. Build homes.</b> People move in when there is housing, food and work.</p>
+      <p><b>2. Build farms and shops.</b> Farms feed the shehar, shops earn rupees every day.</p>
+      <p><b>3. Keep everyone happy.</b> Faith places, parks, schools and hospitals raise Khush-hali. Factories raise pollution — balance with trees and parks.</p>
+      <p><b>4. Watch the meters.</b> Water tanks, substations and food stocks must cover demand, or people leave.</p>
+      <p><b>5. Celebrate.</b> Diwali, Holi, Eid and Republic Day arrive on their own. Tap Celebrate for a boost.</p>
+      <p><b>Controls.</b> Drag to pan. Scroll or pinch to zoom. Tap a building card, then tap the map. Tap placed buildings for info. The cow has right of way — always.</p>
+    </div>
+  </div>
+
+  <!-- New game confirm -->
+  <div id="confirm-panel" class="panel" hidden role="dialog" aria-label="Confirm new city">
+    <div class="panel-head"><h2>Start a new city?</h2><button class="icon-btn" data-close aria-label="Close"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></div>
+    <p class="confirm-text">This bulldozes everything you built. Your current city stays saved until you press the button below.</p>
+    <div class="confirm-row">
+      <button class="btn" data-close>Keep my city</button>
+      <button class="btn danger" id="btn-new-yes">Bulldoze &amp; restart</button>
+    </div>
+  </div>
+
+  <!-- Tile info popover -->
+  <div id="tile-info" class="tile-info" hidden></div>
+
+  <!-- First-run welcome -->
+  <div id="welcome" class="welcome" hidden role="dialog" aria-label="Welcome">
+    <div class="welcome-card">
+      <svg viewBox="0 0 32 32" class="welcome-logo" aria-hidden="true"><rect width="32" height="32" rx="7" fill="var(--accent)"/><path d="M16 5c5 3.4 7 7.4 7 11.4 0 4.6-3.1 7.6-7 7.6s-7-3-7-7.6C9 12.4 11 8.4 16 5z" fill="#fff7ea"/><circle cx="16" cy="15" r="3" fill="var(--accent)"/></svg>
+      <h1>Apna Shehar</h1>
+      <p class="welcome-sub">Build your own India — from chhota gaon to mahanagar.</p>
+      <p class="welcome-tip">Start with homes and a farm. Keep Khush-hali high. And remember: the cow has right of way.</p>
+      <button id="btn-start" class="btn-accent big">Start building</button>
+      <button id="btn-continue" class="btn-link" hidden>Continue my saved city</button>
+    </div>
+  </div>
+
+  <!-- Boot failure surface (if scripts fail, this stays visible) -->
+  <noscript><div class="boot-error">Apna Shehar needs JavaScript. Please enable JavaScript and reload.</div></noscript>
+  <div id="boot-error" class="boot-error" hidden>
+    The city failed to load. <button id="boot-reload" class="btn-accent">Reload</button>
+  </div>
+
+  <!-- SVG icon set (no emoji in chrome — real vector icons) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-rupee" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 7h5.2M9 10.4h5.2M9 7c3 0 4 1.6 4 3.4S12 14 9 14h2.6l3.4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="16.5" cy="9.5" r="2.4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 14.2c2.6.2 4.4 1.7 5 4.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+      <symbol id="i-smile" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.5 14c.8 1.4 2 2.2 3.5 2.2s2.7-.8 3.5-2.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="9" cy="9.6" r="1.2" fill="currentColor"/><circle cx="15" cy="9.6" r="1.2" fill="currentColor"/></symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5 5l1.9 1.9M17.1 17.1L19 19M19 5l-1.9 1.9M6.9 17.1L5 19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1.2" fill="currentColor"/><rect x="14" y="5" width="4" height="14" rx="1.2" fill="currentColor"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></symbol>
+      <symbol id="i-fast" viewBox="0 0 24 24"><path d="M4 5.5v13l8-6.5zM13 5.5v13l8-6.5z" fill="currentColor"/></symbol>
+      <symbol id="i-sound-on" viewBox="0 0 24 24"><path d="M4 9.5v5h3.5L12 19V5L7.5 9.5H4z" fill="currentColor"/><path d="M15.5 8.5a5 5 0 010 7M18 6a8.5 8.5 0 010 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+      <symbol id="i-sound-off" viewBox="0 0 24 24"><path d="M4 9.5v5h3.5L12 19V5L7.5 9.5H4z" fill="currentColor"/><path d="M15.5 9.5l5 5M20.5 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+      <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+      <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+      <symbol id="i-diya" viewBox="0 0 24 24"><path d="M5 14c0 3 3.1 5 7 5s7-2 7-5H5z" fill="currentColor"/><path d="M12 11c-1.6-1.2-1.6-2.8 0-4.4 1.6 1.6 1.6 3.2 0 4.4z" fill="currentColor"/></symbol>
+      <symbol id="i-bulldoze" viewBox="0 0 24 24"><path d="M4 17h16M6 17v-4h8v4M14 13l4-4 3 3-2 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="7.5" cy="19" r="1.6" fill="currentColor"/><circle cx="16.5" cy="19" r="1.6" fill="currentColor"/></symbol>
+      <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v10M9.5 9.5h5M9.5 14.5h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+      <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3.5L22 20H2L12 3.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10v4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.2" r="1.1" fill="currentColor"/></symbol>
+    </defs>
+  </svg>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
