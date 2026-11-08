@@ -34,6 +34,16 @@ function diamondPath(ctx, cx, cy, sx = 1, sy = 1) {
   ctx.closePath();
 }
 
+function roundRectPath(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
 // iso box: footprint fraction w,d of the tile, height H px. Returns top-center.
 function box(ctx, cx, cy, w, d, H, color, opts = {}) {
   const hw = (TW / 2) * w, hh = (TH / 2) * d;
@@ -578,6 +588,155 @@ export function drawBuilding(ctx, key, sx, sy, o) {
       ctx.fillStyle = '#fff'; ctx.font = 'bold 6px system-ui'; ctx.textAlign = 'center'; ctx.fillText('MILL', cx, cy - 25);
       break;
     }
+    case 'chawl': {
+      // long two-storey row with a shared courtyard in front
+      box(ctx, cx, cy - 4, 0.95, 0.5, 24, '#d9c9a3', { edge: '#b8a67e' });
+      box(ctx, cx, cy + 10, 0.95, 0.34, 16, '#e0d2ae', { edge: '#b8a67e' });
+      windowRow(ctx, cx - 24, cy - 12, 20, 4, lit);
+      windowRow(ctx, cx + 2, cy - 12, 20, 4, lit);
+      windowRow(ctx, cx - 14, cy + 4, 28, 5, lit);
+      // stair tower + rooftop tank
+      ctx.fillStyle = '#c96f2f'; ctx.fillRect(cx + 26, cy - 30, 6, 24);
+      ctx.fillStyle = '#37474f'; ctx.fillRect(cx + 25, cy - 33, 8, 4);
+      // drying clothes across the courtyard (knob)
+      const wc = (KNOBS.chawl && KNOBS.chawl.wash.colors[K.wash]) || '#d81b60';
+      ctx.strokeStyle = '#5d4037'; ctx.lineWidth = 0.8;
+      ctx.beginPath(); ctx.moveTo(cx - 20, cy + 2); ctx.quadraticCurveTo(cx, cy + 5, cx + 20, cy + 2); ctx.stroke();
+      for (let i = 0; i < 6; i++) {
+        ctx.fillStyle = i % 2 ? wc : hexShade(wc, 0.75);
+        ctx.fillRect(cx - 18 + i * 6.4, cy + 3, 3.4, 4.2);
+      }
+      break;
+    }
+    case 'villa': {
+      // compound lawn + modern flat-roof house + porch/garden knob
+      ctx.fillStyle = '#9ccc9a'; diamondPath(ctx, cx, cy, 0.98, 0.98); ctx.fill();
+      const t = box(ctx, cx - 3, cy - 3, 0.58, 0.5, 15, (KNOBS.villa && KNOBS.villa.paint.colors[K.paint]) || '#f5efe0', { edge: '#c9b28a' });
+      ctx.fillStyle = '#90a4ae'; // parapet rim
+      ctx.fillRect(cx - 20, t.y - 2.4, 40, 2.2);
+      // glass balcony band
+      ctx.fillStyle = '#b3e5fc'; ctx.fillRect(cx - 14, cy - 12, 22, 5);
+      ctx.strokeStyle = '#78909c'; ctx.lineWidth = 0.8;
+      for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.moveTo(cx - 14 + i * 7, cy - 12); ctx.lineTo(cx - 14 + i * 7, cy - 7); ctx.stroke(); }
+      // porch: parked car or flower garden
+      if (K.porch === 'car') {
+        ctx.fillStyle = '#c62828'; roundRectPath(ctx, cx + 8, cy + 4, 14, 5, 2); ctx.fill();
+        ctx.fillStyle = '#b3e5fc'; ctx.fillRect(cx + 11, cy + 2.2, 8, 3);
+        ctx.fillStyle = '#212121'; ctx.beginPath(); ctx.arc(cx + 11, cy + 9.4, 1.7, 0, 7); ctx.arc(cx + 19, cy + 9.4, 1.7, 0, 7); ctx.fill();
+      } else {
+        for (let i = 0; i < 5; i++) {
+          ctx.fillStyle = ['#e57373', '#ffb74d', '#f06292', '#ba68c8', '#ffd54f'][i];
+          ctx.beginPath(); ctx.arc(cx + 6 + i * 3.6, cy + 6 - (i % 2), 1.5, 0, 7); ctx.fill();
+        }
+      }
+      // brass name plate at the gate
+      ctx.fillStyle = '#d4a017'; roundRectPath(ctx, cx - 22, cy + 4, 8, 3.4, 1); ctx.fill();
+      windowRow(ctx, cx - 12, cy - 8, 12, 2, lit);
+      if (lit) pushLight({ x: cx - 18, y: cy + 2, r: 9, c: 'rgba(255,215,120,.25)' });
+      break;
+    }
+    case 'office': {
+      // glass-fronted company office with boarded nameplate
+      const glass = (KNOBS.office && KNOBS.office.glass.colors[K.glass]) || '#7fb8d8';
+      box(ctx, cx, cy, 0.84, 0.84, 30, '#e8ecef', { edge: '#b0bec5' });
+      // curtain-glass bands on both faces
+      ctx.fillStyle = glass;
+      for (let f = 0; f < 3; f++) {
+        const yb = cy - 4 - f * 9;
+        ctx.fillRect(cx - 22, yb - 5, 20, 6);
+        ctx.fillRect(cx + 2, yb - 9, 20, 6);
+      }
+      // ground canopy + company board
+      ctx.fillStyle = '#37474f'; ctx.fillRect(cx - 12, cy + 6, 24, 2.2);
+      ctx.fillStyle = '#101820'; roundRectPath(ctx, cx - 16, cy - 2, 32, 5, 1.4); ctx.fill();
+      ctx.fillStyle = '#7fe3a0'; ctx.font = 'bold 4px system-ui'; ctx.textAlign = 'center';
+      ctx.fillText('PVT · LTD · CO', cx, cy + 1.4);
+      if (lit) pushLight({ x: cx, y: cy - 2, r: 22, c: 'rgba(140,220,255,.16)' });
+      break;
+    }
+    case 'tower': {
+      // corporate tower: glass stripes, crown knob, beacon spire
+      const crown = (KNOBS.tower && KNOBS.tower.crown.colors[K.crown]) || '#ff8f00';
+      const hw = (TW / 2) * 0.72, hh = (TH / 2) * 0.72, H = 64;
+      box(ctx, cx, cy, 0.72, 0.72, H, '#cfd8dc', { edge: '#90a4ae' });
+      // glass stripes up both faces (parallelograms follow each face's slope)
+      ctx.fillStyle = '#8fb8d0';
+      for (let i = 0; i < 3; i++) {
+        const fx = cx - hw + 4 + i * (hw * 0.62), gx = cx + 4 + i * (hw * 0.62);
+        const fy = cy + (fx - (cx - hw)) * 0.5, gy = cy + hh - (gx - cx) * 0.5;
+        ctx.beginPath(); // left face stripe
+        ctx.moveTo(fx, fy); ctx.lineTo(fx + 5, fy + 2.5);
+        ctx.lineTo(fx + 5, fy + 2.5 - H + 6); ctx.lineTo(fx, fy - H + 6);
+        ctx.closePath(); ctx.fill();
+        ctx.beginPath(); // right face stripe
+        ctx.moveTo(gx, gy); ctx.lineTo(gx + 5, gy - 2.5);
+        ctx.lineTo(gx + 5, gy - 2.5 - H + 6); ctx.lineTo(gx, gy - H + 6);
+        ctx.closePath(); ctx.fill();
+      }
+      // crown band + spire
+      ctx.fillStyle = crown; ctx.fillRect(cx - hw + 2, cy - hh - H + 1, hw * 1.7, 3);
+      if (lit) pushLight({ x: cx, y: cy - hh - H, r: 26, c: 'rgba(255,170,80,.20)' });
+      ctx.strokeStyle = '#90a4ae'; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.moveTo(cx, cy - hh - H); ctx.lineTo(cx, cy - hh - H - 12); ctx.stroke();
+      const blink = Math.sin(o.t * 4) > 0.2;
+      ctx.fillStyle = blink ? '#ff5252' : '#5c1a1a';
+      ctx.beginPath(); ctx.arc(cx, cy - hh - H - 13, 1.6, 0, 7); ctx.fill();
+      // podium
+      box(ctx, cx, cy + hh * 0.55, 0.96, 0.4, 7, '#b0bec5', { edge: '#90a4ae' });
+      break;
+    }
+    case 'hotel': {
+      const bc = (KNOBS.hotel && KNOBS.hotel.board.colors[K.board]) || '#d4a017';
+      box(ctx, cx, cy, 0.8, 0.8, 36, '#efe6d8', { edge: '#cbb89a' });
+      for (let f = 0; f < 4; f++) {
+        windowRow(ctx, cx - 20, cy - 8 - f * 8.4, 16, 2, lit);
+        windowRow(ctx, cx + 4, cy - 8 - f * 8.4, 16, 2, lit);
+      }
+      // portico + sign board
+      ctx.fillStyle = '#8d6e63'; ctx.fillRect(cx - 10, cy + 8, 20, 2);
+      ctx.fillStyle = '#101820'; roundRectPath(ctx, cx - 14, cy + 1, 28, 6, 1.6); ctx.fill();
+      ctx.fillStyle = bc; ctx.font = 'bold 5px system-ui'; ctx.textAlign = 'center';
+      ctx.fillText('HOTEL', cx, cy + 5.4);
+      ctx.fillStyle = '#37474f'; ctx.fillRect(cx + 14, cy - 44, 7, 5); // rooftop tank
+      if (lit) pushLight({ x: cx, y: cy + 2, r: 20, c: 'rgba(255,200,120,.18)' });
+      break;
+    }
+    case 'mall': {
+      const sc = { magenta: '#e91e63', saffron: '#ff8f00', teal: '#00897b' }[K.signage] || '#e91e63';
+      box(ctx, cx, cy, 0.98, 0.86, 22, '#eceff1', { edge: '#b0bec5' });
+      // glass atrium + signage band
+      ctx.fillStyle = '#b3e5fc'; ctx.fillRect(cx - 26, cy - 4, 52, 8);
+      ctx.fillStyle = '#78909c'; for (let i = 0; i < 8; i++) ctx.fillRect(cx - 25 + i * 7, cy - 4, 1.2, 8);
+      ctx.fillStyle = sc; ctx.fillRect(cx - 26, cy - 12, 52, 5);
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 5.4px system-ui'; ctx.textAlign = 'center';
+      ctx.fillText('MALL', cx, cy - 8);
+      windowRow(ctx, cx - 20, cy - 18, 40, 5, lit);
+      // food-court dome + AC units
+      dome(ctx, cx + 16, cy - 22, 5, '#ffb74d');
+      ctx.fillStyle = '#b0bec5'; ctx.fillRect(cx - 20, cy - 26, 6, 3); ctx.fillRect(cx - 8, cy - 26, 6, 3);
+      if (lit) pushLight({ x: cx, y: cy - 10, r: 26, c: 'rgba(255,140,190,.18)' });
+      break;
+    }
+    case 'petrol': {
+      const cc = (KNOBS.petrol && KNOBS.petrol.canopy.colors[K.canopy]) || '#c62828';
+      // forecourt
+      ctx.fillStyle = '#c8d2cc'; diamondPath(ctx, cx, cy, 0.98, 0.98); ctx.fill();
+      // canopy pillars + slab
+      ctx.fillStyle = '#90a4ae'; ctx.fillRect(cx - 14, cy - 12, 2.4, 12); ctx.fillRect(cx + 12, cy - 12, 2.4, 12);
+      ctx.fillStyle = cc;
+      ctx.beginPath(); ctx.moveTo(cx - 24, cy - 12); ctx.lineTo(cx, cy - 20); ctx.lineTo(cx + 24, cy - 12); ctx.lineTo(cx, cy - 5); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = hexShade(cc, 0.75); ctx.beginPath(); ctx.moveTo(cx - 24, cy - 12); ctx.lineTo(cx, cy - 20); ctx.lineTo(cx, cy - 17.4); ctx.lineTo(cx - 24, cy - 9.6); ctx.closePath(); ctx.fill();
+      // pumps + price pole
+      ctx.fillStyle = '#37474f'; ctx.fillRect(cx - 8, cy - 4, 4, 5); ctx.fillRect(cx + 5, cy - 4, 4, 5);
+      ctx.fillStyle = '#eceff1'; ctx.fillRect(cx - 7, cy - 3, 2, 2); ctx.fillRect(cx + 6, cy - 3, 2, 2);
+      ctx.strokeStyle = '#607d8b'; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(cx + 22, cy + 6); ctx.lineTo(cx + 22, cy - 16); ctx.stroke();
+      ctx.fillStyle = '#101820'; ctx.fillRect(cx + 19, cy - 21, 6.4, 5);
+      ctx.fillStyle = '#ffd54f'; ctx.font = 'bold 3.4px system-ui'; ctx.textAlign = 'center';
+      ctx.fillText('₹/L', cx + 22.2, cy - 17.4);
+      if (lit) pushLight({ x: cx, y: cy - 14, r: 22, c: 'rgba(255,240,190,.20)' });
+      break;
+    }
     case 'road': {
       ctx.fillStyle = P.road; diamondPath(ctx, cx, cy, 0.98, 0.98); ctx.fill();
       ctx.fillStyle = P.roadLine;
@@ -817,6 +976,68 @@ export function drawVehicle(ctx, x, y, v, t, night) {
       ctx.fillStyle = '#e8850c'; ctx.fillRect(-9.4, -13.4, 2.8, 2.2);
       break;
     }
+    case 'car': {
+      // hatchback — the city's workhorse
+      ctx.fillStyle = '#212121';
+      ctx.beginPath(); ctx.arc(-7, 0, 2.4, 0, 7); ctx.arc(7, 0, 2.4, 0, 7); ctx.fill();
+      ctx.fillStyle = v.bodyCol || '#c62828';
+      roundRectPath(ctx, -11, -8, 22, 6.4, 2.2); ctx.fill();
+      ctx.fillStyle = hexShade(v.bodyCol || '#c62828', 0.82);
+      roundRectPath(ctx, -6.5, -12.4, 12.5, 5.4, 2); ctx.fill(); // cabin
+      ctx.fillStyle = '#b3e5fc'; ctx.fillRect(-5.4, -11.4, 4.4, 3.4); ctx.fillRect(0.6, -11.4, 4.4, 3.4);
+      if (night) lights.push({ x: x + 12 * flip, y: y - 4, r: 11, c: 'rgba(255,244,200,.28)' });
+      break;
+    }
+    case 'taxi': {
+      // kaali-peeli taxi
+      ctx.fillStyle = '#212121';
+      ctx.beginPath(); ctx.arc(-7, 0, 2.4, 0, 7); ctx.arc(7, 0, 2.4, 0, 7); ctx.fill();
+      ctx.fillStyle = '#fdd835'; roundRectPath(ctx, -11, -8, 22, 6.4, 2.2); ctx.fill();
+      ctx.fillStyle = '#212121'; roundRectPath(ctx, -6.5, -12.4, 12.5, 5.4, 2); ctx.fill(); // black cabin
+      ctx.fillStyle = '#b3e5fc'; ctx.fillRect(-5.4, -11.4, 4.4, 3.4); ctx.fillRect(0.6, -11.4, 4.4, 3.4);
+      ctx.fillStyle = '#fdd835'; ctx.fillRect(-2.4, -13.4, 4.8, 1.6); // roof sign
+      if (night) lights.push({ x: x + 12 * flip, y: y - 4, r: 11, c: 'rgba(255,244,200,.28)' });
+      break;
+    }
+  }
+  ctx.restore();
+}
+
+// ================= DOOR PLATES (Mahanagar ownership at the door) =================
+// Drawn in SCREEN space by render.js, already translated to the tile base and
+// scaled by cam.z. Green nameplate = ACQUIRED (owner name); cream board with
+// red lettering = the classic Indian TO-LET board (available). Night glow is
+// pushed via the shared lights collector.
+export function drawDoorPlate(ctx, x, y, info, t, night) {
+  ctx.save();
+  ctx.translate(x, y);
+  const sway = Math.sin(t * 1.5 + x * 0.03) * 0.7; // a bit of breeze
+  ctx.translate(sway, 0);
+  // posts
+  ctx.strokeStyle = '#5d4037'; ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.moveTo(-9, 0); ctx.lineTo(-9, -9); ctx.moveTo(9, 0); ctx.lineTo(9, -9); ctx.stroke();
+  const label = info.owned ? info.name : 'TO-LET';
+  ctx.font = info.owned ? '700 5.5px Outfit, system-ui, sans-serif' : '800 6.4px Outfit, system-ui, sans-serif';
+  const bw = Math.max(24, ctx.measureText(label).width + 9);
+  const bh = info.owned ? 12.5 : 9.5;
+  const bx = -bw / 2, by = -9 - bh;
+  if (info.owned) {
+    ctx.fillStyle = 'rgba(19,42,26,.95)'; roundRectPath(ctx, bx, by, bw, bh, 2.2); ctx.fill();
+    ctx.strokeStyle = '#d4a017'; ctx.lineWidth = 0.9; roundRectPath(ctx, bx + 1, by + 1, bw - 2, bh - 2, 1.6); ctx.stroke();
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ffd54f'; ctx.font = '700 3px Outfit, system-ui, sans-serif';
+    ctx.fillText('ACQUIRED', 0, by + 4.4);
+    ctx.fillStyle = '#fff8e1'; ctx.font = '700 5.5px Outfit, system-ui, sans-serif';
+    ctx.fillText(label, 0, by + 10.4);
+  } else {
+    ctx.fillStyle = 'rgba(252,248,238,.96)'; roundRectPath(ctx, bx, by, bw, bh, 2.2); ctx.fill();
+    ctx.strokeStyle = '#b3261e'; ctx.lineWidth = 1; roundRectPath(ctx, bx + 1, by + 1, bw - 2, bh - 2, 1.6); ctx.stroke();
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#b3261e';
+    ctx.fillText('TO-LET', 0, by + 6.6);
+  }
+  if (night) {
+    pushLight({ x: 0, y: by + bh / 2, r: 17, c: info.owned ? 'rgba(120,255,170,.16)' : 'rgba(255,205,120,.15)' });
   }
   ctx.restore();
 }

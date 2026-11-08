@@ -9,7 +9,7 @@ export const CATS = [
   { id: 'civic', name: 'Seva' },
   { id: 'faith', name: 'Faith' },
   { id: 'fun',   name: 'Fun' },
-  { id: 'work',  name: 'Industry' },
+  { id: 'work',  name: 'Companies' },
   { id: 'decor', name: 'Roads' },
 ];
 
@@ -23,7 +23,9 @@ export const BUILDINGS = {
   pakka:    { name: 'Pakka Ghar',    cat: 'house', cost: 3600,  upkeep: 5,  homes: 16, pw: -1, tier: 0,  draw: 'pakka',    desc: 'Brick and cement with a rooftop tank.' },
   haveli:   { name: 'Haveli',        cat: 'house', cost: 8500,  upkeep: 10, homes: 18, pw: -1, happy: 2, tier: 2, draw: 'haveli', desc: 'Carved jharokhas around a courtyard.' },
   bungalow: { name: 'Bungalow',      cat: 'house', cost: 7500,  upkeep: 8,  homes: 8,  pw: -1, happy: 3, tier: 3, draw: 'bungalow', desc: 'A gated garden house for one lucky family.' },
+  chawl:    { name: 'Chawl',         cat: 'house', cost: 6500,  upkeep: 12, homes: 30, pw: -1, tier: 2, draw: 'chawl', desc: 'Rows of one-room homes around a shared courtyard — Mumbai spirit.' },
   flats:    { name: 'Flat Block',    cat: 'house', cost: 13000, upkeep: 18, homes: 44, pw: -3, jobs: 2, tier: 3, draw: 'flats', desc: 'Four floors of city life and drying clothes.' },
+  villa:    { name: 'Modern Villa',  cat: 'house', cost: 15000, upkeep: 14, homes: 10, pw: -2, happy: 3, tier: 3, draw: 'villa', desc: 'Glass balconies, a car porch, and a brass plate at the gate.' },
 
   // ---- Farms ----
   wheat:  { name: 'Wheat Field',  cat: 'farm', cost: 900,  upkeep: 3, jobs: 2, food: 34, tier: 0, draw: 'wheat',  desc: 'Golden in harvest season. Feeds the shehar.' },
@@ -38,6 +40,7 @@ export const BUILDINGS = {
   bazaar:   { name: 'Bazaar',          cat: 'shop', cost: 7000,  upkeep: 12, jobs: 8, income: 210, happy: 2, pw: -2, tier: 1, draw: 'bazaar', desc: 'Canopy stalls selling everything, loudly.' },
   saree:    { name: 'Saree Shop',      cat: 'shop', cost: 5500,  upkeep: 5,  jobs: 3, income: 105, pw: -1, tier: 2, draw: 'saree', desc: 'Kanjivaram to cotton, folded like rainbows.' },
   jeweller: { name: 'Jewellery Shop',  cat: 'shop', cost: 10000, upkeep: 8,  jobs: 3, income: 230, pw: -1, tier: 3, draw: 'jeweller', desc: 'For weddings, festivals and safe keeping.' },
+  mall:     { name: 'Shopping Mall',   cat: 'shop', cost: 22000, upkeep: 22, jobs: 20, income: 520, happy: 3, pw: -5, tier: 3, draw: 'mall', desc: 'Escalators, food court, and AC you pay for.' },
   bank:     { name: 'Bank',            cat: 'shop', cost: 15000, upkeep: 14, jobs: 6, income: 300, pw: -2, tier: 3, draw: 'bank', desc: 'Loans, lockers, and a queue by 10 am.' },
   cinema:   { name: 'Cinema Hall',     cat: 'shop', cost: 12000, upkeep: 12, jobs: 5, income: 140, happy: 5, pw: -3, tier: 2, draw: 'cinema', desc: 'Hand-painted posters, interval samosa.' },
 
@@ -66,6 +69,10 @@ export const BUILDINGS = {
   kiln:    { name: 'Brick Kiln',    cat: 'work', cost: 6000,  upkeep: 6,  jobs: 8,  income: 180, pol: 8,  tier: 2, draw: 'kiln', desc: 'Chimney red at sunset. Keeps masons busy.' },
   factory: { name: 'Small Factory', cat: 'work', cost: 9000,  upkeep: 10, jobs: 12, income: 290, pol: 6, pw: -5, tier: 2, draw: 'factory', desc: 'Jobs galore — bring trees to balance.' },
   textile: { name: 'Textile Mill',  cat: 'work', cost: 15000, upkeep: 16, jobs: 22, income: 520, pol: 10, pw: -8, tier: 3, draw: 'textile', desc: 'Looms clack day and night.' },
+  office:  { name: 'Company Office',cat: 'work', cost: 14000, upkeep: 12, jobs: 18, income: 420, pw: -4, tier: 2, draw: 'office', desc: 'Glass-fronted offices where the city logs in every morning.' },
+  tower:   { name: 'Corporate Tower',cat: 'work', cost: 30000, upkeep: 26, jobs: 40, income: 900, pw: -8, tier: 3, draw: 'tower', desc: 'The skyline. WFH cancelled.' },
+  hotel:   { name: 'Hotel',         cat: 'work', cost: 18000, upkeep: 16, jobs: 14, income: 380, happy: 2, pw: -3, tier: 3, draw: 'hotel', desc: 'Banquets, buffet breakfast, and a revolving door.' },
+  petrol:  { name: 'Petrol Pump',   cat: 'work', cost: 7000,  upkeep: 6,  jobs: 4,  income: 160, pw: -1, tier: 2, draw: 'petrol', desc: 'Canopy, pumps, and a patient queue of autos.' },
 
   // ---- Roads & decor ----
   road:  { name: 'Road',        cat: 'decor', cost: 60,  tier: 0, draw: 'road',  desc: 'Autos, cows and cricket all share it.' },
@@ -114,6 +121,14 @@ export const KNOBS = {
   masjid:    { dome:     { colors: { green: '#1b5e20', white: '#eceff1', teal: '#00897b' } } },
   gurudwara: { dome:     { colors: { gold: '#d4a017', copper: '#b87333', white: '#eceff1' } } },
   panchayat: { dome:     { colors: { terracotta: '#c96f2f', green: '#2e7d32', blue: '#1565c0' } } },
+  chawl:     { wash:     { colors: { multicolour: '#d81b60', pastel: '#90caf9', plain: '#b0bec5' } } },
+  villa:     { paint:    { colors: { ivory: '#f5efe0', concrete: '#d7dbde', sand: '#e6d2ac' } },
+               porch:    { options: ['car', 'garden'] } },
+  office:    { glass:    { colors: { azure: '#7fb8d8', teal: '#6fb8b0', smoke: '#9aa7b0' } } },
+  tower:     { crown:    { colors: { saffron: '#ff8f00', white: '#eceff1', emerald: '#2e7d32' } } },
+  mall:      { signage:  { options: ['magenta', 'saffron', 'teal'] } },
+  hotel:     { board:    { colors: { gold: '#d4a017', blue: '#1565c0', green: '#2e7d32' } } },
+  petrol:    { canopy:   { colors: { red: '#c62828', blue: '#1565c0', green: '#2e7d32' } } },
 };
 
 export const TIERS = [
@@ -160,8 +175,8 @@ export const EVENTS = {
 };
 
 export const ECON = {
-  startMoney: 25000,
-  startPop: 8,
+  startMoney: 45000,   // Mahanagar Edition: the city is pre-built; the treasury funds growth
+  startPop: 8,         // overwritten by newGame() with the city's actual residents
   taxPerPop: 2.2,          // base ₹ / citizen / day, scaled by happiness
   foodPerPop: 0.14,        // food units eaten per citizen per day
   waterPerPop: 0.16,       // water units needed per citizen per day

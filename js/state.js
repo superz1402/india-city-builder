@@ -3,7 +3,17 @@
 
 import { BUILDINGS, TIERS, ECON, KNOBS } from './data.js';
 
-export const MAP = 36; // map is MAP x MAP tiles
+export const MAP = 48; // Mahanagar Edition: the city map grew from 36×36
+
+// Deed tiles the city generator reserves for the four [NPC] residents.
+// js/owners.js ASSIGNMENTS must quote exactly these tiles (a node test
+// asserts the two files stay in sync).
+export const CITY_DEED_TILES = {
+  ramu:  { home: '13,32', shop: '20,32' },   // pakka ghar + kirana, Old Mohalla bazaar
+  meera: { home: '12,34', shop: '28,24' },   // flat block, Colony + saree shop, CBD
+  arjun: { home: '13,10', shop: '22,26' },   // bungalow, Civil Lines + dhaba, Bazaar St
+  zoya:  { home: '29,16', shop: '36,24' },   // villa, Civil Lines + company office, CBD
+};
 
 // ---- seeded RNG (mulberry32) for reproducible terrain ----
 export function makeRng(seed) {
@@ -73,21 +83,151 @@ export function newGame(seed = (Date.now() % 100000)) {
   S.notices = []; S.tierIdx = 0; S.powerCut = false; S.jamUntil = 0;
   S.startedAt = Date.now();
 
-  // starter hamlet near the centre: a couple of homes, a road, a tree line
-  const cx = Math.floor(MAP / 2), cy = Math.floor(MAP / 2);
-  for (let y = cy - 4; y <= cy + 4; y++) for (let x = cx - 5; x <= cx + 5; x++) {
-    if (S.terrain[y][x].w) { S.terrain[y][x].w = false; } // dry a pocket if river bends in
-  }
-  placeRaw(cx - 1, cy, 'jhuggi'); placeRaw(cx + 1, cy, 'jhuggi');
-  placeRaw(cx, cy - 1, 'kaccha');
-  for (let x = cx - 3; x <= cx + 3; x++) placeRaw(x, cy + 1, 'road');
-  placeRaw(cx - 3, cy + 2, 'tree'); placeRaw(cx + 3, cy + 2, 'tree');
-  placeRaw(cx + 2, cy - 2, 'wheat');
+  generateCity();
   recomputeStats(true);
-  pushNotice('Welcome to your gaon! Build homes and a farm to grow.', 'info');
+
+  // a pre-built city arrives lived-in: fill most of the housing, unlock the tier
+  S.pop = Math.min(S.stats.homes, Math.max(150, Math.round(S.stats.homes * 0.62)));
+  S.tierIdx = currentTierIdx();
+  pushNotice('Welcome to Apna Shehar — a whole Mahanagar, built and waiting. Walk its streets!', 'info');
+}
+
+// ═════════════════════════════════════════════════════════════════════
+//  MAHANAGAR — the pre-built city, laid out entirely in code.
+//
+//  Avenues every 8 tiles both directions make a grid of 7×7 blocks
+//  (with a river bridge crossing on each vertical avenue). Each block
+//  ring is filled with its district's buildings facing the streets;
+//  block interiors are courtyards: parks, faith places, civic landmarks
+//  or farmland. Four deed tiles are reserved for the [NPC] residents.
+// ═════════════════════════════════════════════════════════════════════
+const AVENUES = [9, 17, 25, 33, 41];
+
+// block interior ring fill — walks the perimeter clockwise from NW corner
+function ringFill(x0, y0, x1, y1, list, reserved, rstate) {
+  const cells = [];
+  for (let x = x0; x <= x1; x++) cells.push([x, y0]);
+  for (let y = y0 + 1; y <= y1; y++) cells.push([x1, y]);
+  for (let x = x1 - 1; x >= x0; x--) cells.push([x, y1]);
+  for (let y = y1 - 1; y > y0; y--) cells.push([x0, y]);
+  cells.forEach(([x, y], i) => {
+    if (S.grid[y][x] || S.terrain[y][x].w) return;
+    if (reserved.has(x + ',' + y)) return;
+    const key = list[(i + rstate.o) % list.length];
+    placeRaw(x, y, key);
+    rstate.o = (rstate.o + (i % 3 === 0 ? 1 : 0)) % Math.max(1, list.length);
+  });
+}
+
+// courtyard fill — green centres with breathing gaps for walkers
+function courtyardFill(x0, y0, x1, y1, list) {
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+    if (S.grid[y][x] || S.terrain[y][x].w) continue;
+    if ((x + y) % 3 === 0) continue; // walker gaps
+    placeRaw(x, y, list[(x * 5 + y * 3) % list.length]);
+  }
+}
+
+export function generateCity() {
+  const reserved = new Set(Object.values(CITY_DEED_TILES).flatMap(d => [d.home, d.shop]));
+  const rstate = { o: 0 };
+
+  // ---- landmark tiles the deed book quotes (placed first, exactly) ----
+  placeRaw(13, 32, 'pakka');    // [NPC] Ramu  — home
+  placeRaw(20, 32, 'kirana');   // [NPC] Ramu  — shop
+  placeRaw(12, 34, 'flats');    // [NPC] Meera — home
+  placeRaw(28, 24, 'saree');    // [NPC] Meera — shop
+  placeRaw(13, 10, 'bungalow'); // [NPC] Arjun — home
+  placeRaw(22, 26, 'dhaba');    // [NPC] Arjun — shop
+  placeRaw(29, 16, 'villa');    // [NPC] Zoya  — home
+  placeRaw(36, 24, 'office');   // [NPC] Zoya  — shop
+
+  // ---- roads: avenues every 8 tiles, bridges where they meet the river ----
+  for (const y of AVENUES) for (let x = 0; x < MAP; x++) {
+    if (S.terrain[y][x].w || S.grid[y][x]) continue;
+    placeRaw(x, y, 'road');
+  }
+  for (const x of AVENUES) for (let y = 0; y < MAP; y++) {
+    if (S.terrain[y][x].w) { if (y < 9 && !S.grid[y][x]) placeRaw(x, y, 'bridge'); continue; }
+    if (!S.grid[y][x]) placeRaw(x, y, 'road');
+  }
+  // chowk widening: double-wide around the central crossing (23–27 × 23–27)
+  for (let y = 23; y <= 27; y++) for (let x = 23; x <= 27; x++) {
+    if (!S.terrain[y][x].w && !S.grid[y][x]) placeRaw(x, y, 'road');
+  }
+
+  // ---- Block band A (y 10–16): CIVIL LINES — bungalows, havelis, villas ----
+  const civilA = ['bungalow', 'haveli', 'bungalow', 'pakka', 'bungalow'];
+  const civilB = ['bungalow', 'villa', 'haveli', 'bungalow'];
+  ringFill(10, 10, 16, 16, civilA, reserved, rstate);
+  courtyardFill(11, 11, 15, 15, ['tree', 'tree', 'park', 'tree']);
+  ringFill(18, 10, 24, 16, civilB, reserved, rstate);
+  courtyardFill(19, 11, 23, 15, ['tree', 'park', 'tree']);
+  ringFill(26, 10, 32, 16, civilA, reserved, rstate);
+  courtyardFill(27, 11, 31, 15, ['tree', 'tree', 'park']);
+  ringFill(34, 10, 40, 16, civilB, reserved, rstate);
+  courtyardFill(35, 11, 39, 15, ['tree', 'park', 'tree', 'tree']);
+  ringFill(42, 10, 47, 16, ['mango', 'wheat', 'tree', 'mango'], reserved, rstate);
+
+  // ---- Block band B (y 18–24): CBD — companies, tower, mall, hotel ----
+  const cbdRing = ['office', 'office', 'bank', 'office', 'cinema', 'office', 'jeweller', 'office'];
+  ringFill(10, 18, 16, 24, cbdRing, reserved, rstate);
+  courtyardFill(11, 19, 15, 23, ['tree', 'tree']);
+  ringFill(18, 18, 24, 24, cbdRing, reserved, rstate);
+  placeRaw(21, 21, 'tower'); // the skyline
+  placeRaw(23, 19, 'flag'); placeRaw(19, 23, 'tree'); placeRaw(23, 23, 'tree');
+  ringFill(26, 18, 32, 24, cbdRing, reserved, rstate);
+  placeRaw(29, 21, 'mall');
+  placeRaw(27, 19, 'tree'); placeRaw(31, 19, 'hotel');
+  ringFill(34, 18, 40, 24, cbdRing, reserved, rstate);
+  courtyardFill(35, 19, 39, 23, ['tree', 'tree']);
+  ringFill(42, 18, 47, 24, cbdRing, reserved, rstate);
+
+  // ---- Block band C (y 26–32): OLD MOHALLA & BAZAAR ----
+  ringFill(10, 26, 16, 32, ['pakka', 'kaccha', 'pakka', 'chawl', 'pakka'], reserved, rstate);
+  placeRaw(13, 29, 'mandir'); placeRaw(11, 29, 'masjid');
+  placeRaw(15, 29, 'gurudwara'); placeRaw(13, 31, 'church'); placeRaw(13, 27, 'tree');
+  ringFill(18, 26, 24, 32, ['chai', 'kirana', 'bazaar', 'chai', 'saree', 'kirana', 'dhaba', 'chai', 'bazaar'], reserved, rstate);
+  placeRaw(21, 29, 'chai'); placeRaw(19, 31, 'tree');
+  ringFill(26, 26, 32, 32, ['chawl', 'pakka', 'chawl', 'pakka', 'kaccha', 'chawl'], reserved, rstate);
+  placeRaw(29, 29, 'watertank'); placeRaw(27, 27, 'police');
+  ringFill(34, 26, 40, 32, ['pakka', 'kaccha', 'pakka', 'chai', 'pakka'], reserved, rstate);
+  placeRaw(37, 29, 'cinema'); placeRaw(39, 27, 'tree'); placeRaw(35, 31, 'tree');
+  ringFill(42, 26, 47, 32, ['pakka', 'kaccha', 'pakka', 'tree'], reserved, rstate);
+
+  // ---- Block band D (y 34–40): COLONY — flats, schools, parks ----
+  ringFill(10, 34, 16, 40, ['flats', 'pakka', 'flats', 'pakka', 'flats'], reserved, rstate);
+  placeRaw(13, 37, 'school'); placeRaw(15, 39, 'park'); placeRaw(11, 39, 'tree');
+  ringFill(18, 34, 24, 40, ['flats', 'pakka', 'flats', 'pakka'], reserved, rstate);
+  placeRaw(21, 37, 'maidan'); placeRaw(19, 39, 'park'); placeRaw(23, 39, 'tree');
+  ringFill(26, 34, 32, 40, ['flats', 'pakka', 'flats', 'chawl', 'flats'], reserved, rstate);
+  placeRaw(29, 37, 'hospital'); placeRaw(31, 39, 'watertank'); placeRaw(27, 39, 'tree');
+  ringFill(34, 34, 40, 40, ['pakka', 'flats', 'pakka', 'flats'], reserved, rstate);
+  placeRaw(37, 37, 'busstand'); placeRaw(39, 39, 'substation'); placeRaw(35, 39, 'tree');
+  ringFill(42, 34, 47, 40, ['pakka', 'flats', 'pakka'], reserved, rstate);
+  placeRaw(45, 37, 'mela'); placeRaw(43, 39, 'tree');
+
+  // ---- Block band E (y 42–47): INDUSTRIAL EDGE & FIELDS ----
+  ringFill(10, 42, 16, 47, ['wheat', 'wheat', 'dairy', 'wheat'], reserved, rstate);
+  ringFill(18, 42, 24, 47, ['paddy', 'wheat', 'paddy', 'dairy'], reserved, rstate);
+  ringFill(26, 42, 32, 47, ['kiln', 'wheat', 'tree', 'kiln'], reserved, rstate);
+  ringFill(34, 42, 40, 47, ['factory', 'textile', 'petrol', 'substation'], reserved, rstate);
+  ringFill(42, 42, 47, 47, ['mango', 'tree', 'mango'], reserved, rstate); // pond sits east
+
+  // ---- Green belt west of the first avenue + river north bank ----
+  for (const [gy0, gy1] of [[10, 16], [18, 24], [26, 32], [34, 40]]) {
+    courtyardFill(0, gy0, 8, gy1, ['tree', 'wheat', 'tree', 'park', 'tree']);
+  }
+  for (let x = 0; x < MAP; x++) for (let y = 0; y <= 8; y++) {
+    if (S.grid[y][x] || S.terrain[y][x].w) continue;
+    if ((x * 7 + y * 11) % 4 === 0) placeRaw(x, y, y <= 2 ? ((x % 3) ? 'wheat' : 'mango') : 'tree');
+  }
 }
 
 function placeRaw(x, y, key, knobs = null) {
+  if (S.terrain[y] && S.terrain[y][x] && S.terrain[y][x].w && key !== 'bridge') return; // never build on water
+  const prev = S.grid[y][x];
+  if (prev) S.counts[prev.k] = Math.max(0, (S.counts[prev.k] || 1) - 1); // re-placing keeps counts honest
   const cell = { k: key, born: S.day, seed: (x * 31 + y * 17) % 97 };
   if (knobs && Object.keys(knobs).length) cell.knobs = { ...knobs };
   S.grid[y][x] = cell;

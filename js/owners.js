@@ -51,13 +51,15 @@ export const RESIDENTS = [
   '[NPC] Zoya',
 ];
 
-// Code-side deeds (see guide above). The starter hamlet sits at the centre:
-// jhuggi (17,18), jhuggi (19,18), kaccha ghar (18,17).
-// Zoya owns nothing yet — she strolls the bazaar as a visitor.
+// Code-side deeds (see guide above). Mahanagar Edition: every resident now
+// holds a home AND a shop across the pre-built city (state.js reserves these
+// exact tiles in generateCity() — a node test asserts the sync).
+// Deeds attach to TILES: rebuild on the tile and the deed still holds.
 export const ASSIGNMENTS = [
-  { name: '[NPC] Ramu', home: '17,18' },
-  { name: '[NPC] Meera', home: '19,18' },
-  { name: '[NPC] Arjun', home: '18,17' },
+  { name: '[NPC] Ramu',  home: '13,32', shop: '20,32' },  // pakka ghar + kirana, Old Mohalla
+  { name: '[NPC] Meera', home: '12,34', shop: '28,24' },  // flat block + saree shop, CBD
+  { name: '[NPC] Arjun', home: '13,10', shop: '22,26' },  // bungalow, Civil Lines + dhaba
+  { name: '[NPC] Zoya',  home: '29,16', shop: '36,24' },  // villa, Civil Lines + company office
 ];
 
 // ---------- merged deed list (code + in-game) ----------

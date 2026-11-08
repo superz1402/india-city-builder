@@ -37,15 +37,22 @@ function makePerson(x, y) {
 
 function makeVehicle(x, y) {
   const shops = (S.counts.bazaar || 0) + (S.counts.dhaba || 0) + (S.counts.kirana || 0);
+  const companies = (S.counts.office || 0) + (S.counts.tower || 0) + (S.counts.mall || 0) + (S.counts.hotel || 0);
   let vkind = 'auto';
   const r = rng();
-  if (shops > 4 && r < 0.25) vkind = 'bus';
-  else if (shops > 3 && r < 0.45) vkind = 'truck';
-  else if (r < 0.7) vkind = 'cycle';
-  else if (r < 0.85) vkind = 'bullock';
+  if (companies > 4 && r < 0.3) vkind = 'car';        // Mahanagar: offices bring cars
+  else if (r < 0.42) vkind = 'car';
+  else if (r < 0.52) vkind = 'taxi';                  // kaali-peeli
+  else if (r < 0.62) vkind = 'auto';
+  else if (shops > 4 && r < 0.72) vkind = 'bus';
+  else if (shops > 3 && r < 0.8) vkind = 'truck';
+  else if (r < 0.9) vkind = 'cycle';
+  else vkind = 'bullock';
+  const bodyCols = ['#c62828', '#1565c0', '#2e7d32', '#f5f5f5', '#6d4c41', '#7b1fa2', '#37474f'];
   return {
     kind: 'vehicle', vkind, x, y, tx: x, ty: y, dir: 1, ph: rng() * 6.28,
-    speed: vkind === 'cycle' ? 0.9 : vkind === 'bullock' ? 0.4 : vkind === 'bus' ? 0.75 : 0.95,
+    speed: vkind === 'cycle' ? 0.9 : vkind === 'bullock' ? 0.4 : vkind === 'bus' ? 0.75 : vkind === 'car' ? 1.15 : vkind === 'taxi' ? 1.05 : 0.95,
+    bodyCol: bodyCols[Math.floor(rng() * bodyCols.length)],
     riderCol: ['#37474f', '#c62828', '#1565c0'][Math.floor(rng() * 3)],
   };
 }
@@ -89,11 +96,11 @@ function nextTarget(a, roadOnly) {
 
 export function update(dt, t) {
   if (!S.grid.length) return; // no city yet (welcome screen)
-  // population scaling
-  const wantPeople = Math.max(4, Math.min(90, Math.round(S.pop * 0.35)));
+  // population scaling (Mahanagar caps: a city breathes deeper than a gaon)
+  const wantPeople = Math.max(6, Math.min(110, Math.round(S.pop * 0.22)));
   const shops = Object.entries(S.counts).reduce((n, [k, c]) => n + ((BUILDINGS[k] && BUILDINGS[k].income) ? c : 0), 0);
-  const wantVehicles = Math.max(2, Math.min(18, Math.round(shops * 0.7)));
-  const wantCows = Math.min(7, 1 + Math.floor(S.pop / 140) + (S.counts.dairy ? 2 : 0));
+  const wantVehicles = Math.max(6, Math.min(26, Math.round(shops * 0.28)));
+  const wantCows = Math.min(7, 1 + Math.floor(S.pop / 200) + (S.counts.dairy ? 2 : 0));
 
   spawnAcc += dt;
   if (spawnAcc > 0.4) {
