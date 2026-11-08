@@ -536,3 +536,41 @@ copied; grammar only, same discipline as the polyfork round.
 **Ops**
 - Pushed to origin/main (verified via ls-remote → 3fcc9f1); issue #23 closed
   with evidence. Pages redeploys from main automatically.
+
+## 2026-11-09 ~06:45 IST — v5.1 TRUE first-person streets (part 2 of #23) — session reconciles the concurrent-edit war
+
+Two agent sessions ran the same #23 task in one worktree and kept superseding
+each other (fpv.js was committed, reverted, stashed as
+docs/fpv-concurrent-wip.patch + docs/concurrent-ui-wip.patch, deleted twice).
+This session ended the war the safe way: an isolated git worktree
+(/home/z/my-project/fpv-integration, branch v5-true-fpv), the preserved
+patches re-applied and reconciled with the concurrent session's canonical
+build, everything browser-verified BEFORE touching the shared tree again.
+
+What shipped on top of part 1's art rehaul (kept whole: arts.js rooflines,
+district paint stories, lane traffic, plate discipline):
+- **True first person (criterion 1)**: js/fpv.js — perspective projection
+  renderer (painter-sorted sun-lit boxes, near-plane clipping, rooflines,
+  shop signboards, kerbs/dashes/zebra, REAL-IST dawn/dusk/night with lit
+  windows/stars/moon, 3D rush-hour traffic with headlight pools, hanging
+  door plates near-doors-only, monsoon/winter/festival passes, tilt-shift
+  band on the horizon). walk.js = the camera (yaw/pitch/bob); no avatar, no
+  You tag; drag or click-to-pointer-lock to look; Q/E + arrows turn;
+  joystick/gamepad-stick move relative to facing; heading chevron + compass
+  chip + pocket minimap keep you oriented.
+- **HUD polish (criterion 5)**: crosshair, pocket map (roads, deed homes,
+  [NPC]s, your arrow), first-time look hint, district · compass chip.
+- **Docs**: WALK-REFERENCE.md documents the deviation; help + welcome copy
+  updated for the first-person controls.
+
+QA evidence: docs/qa-v51-plan.png, docs/qa-v51-fpv-night.png,
+docs/qa-v51-fpv-walking.png (desktop 1280x800; mobile 390x844 also checked).
+node --check all green; scripts/test-city.mjs ALL GREEN; console clean on a
+fresh boot, walk, emote, lens toggle and exit roundtrip.
+
+Lessons for the next session: (1) never leave the shared worktree broken
+mid-edit — the other session's reverts were reasonable reactions to a
+half-wired render.js; (2) for parallel tasks, claim a `git worktree` first;
+(3) `git apply --3way` can silently drop worktree changes when the shared
+repo is hot — blob-verify every file (`git show HEAD:file | md5sum`) before
+committing.
