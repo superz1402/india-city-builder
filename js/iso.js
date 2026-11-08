@@ -79,10 +79,11 @@ function clampCam() {
 // ---------- input ----------
 const pointers = new Map();
 let pinchDist = 0, downInfo = null, moved = false;
-let onTapTile = null, onDragStart = null;
+let onTapTile = null, onDragStart = null, onLook = null;
 
 export function initInput(el, handlers) {
   canvas = el; onTapTile = handlers.onTapTile; onDragStart = handlers.onDragStart;
+  onLook = handlers.onLook || null;
 
   el.addEventListener('pointerdown', (e) => {
     try { el.setPointerCapture(e.pointerId); } catch (err) { /* stale pointer id — harmless */ }
@@ -93,6 +94,19 @@ export function initInput(el, handlers) {
     } else if (pointers.size === 2) {
       const [a, b] = [...pointers.values()];
       pinchDist = Math.hypot(a.x - b.x, a.y - b.y);
+    }
+    // street level: clicking the view captures the mouse for true FPS-style
+    // looking (Esc or exit-walk releases it); drag still works without lock
+    if (S.mode === 'walk' && e.pointerType === 'mouse' &&
+        document.pointerLockElement !== el && el.requestPointerLock) {
+      try { el.requestPointerLock(); } catch (err) { /* some browsers gate it — drag-look still works */ }
+    }
+  });
+
+  // pointer-lock mouse look (dx/dy come from movementX/Y, not client deltas)
+  document.addEventListener('mousemove', (e) => {
+    if (document.pointerLockElement === el && S.mode === 'walk' && onLook) {
+      onLook(e.movementX || 0, e.movementY || 0);
     }
   });
 
@@ -106,7 +120,7 @@ export function initInput(el, handlers) {
       if (Math.hypot(e.clientX - downInfo.sx, e.clientY - downInfo.sy) > 9) {
         if (!moved) { moved = true; el.classList.add('dragging'); onDragStart && onDragStart(); }
         if (S.mode === 'walk') {
-          orbitBy(dx * 0.0062);              // street level: drag = look around
+          if (onLook) onLook(dx, dy);        // street level: drag = turn your head
         } else {
           cam.x -= dx / cam.z; cam.y -= dy / cam.z;
           clampCam();
@@ -115,7 +129,7 @@ export function initInput(el, handlers) {
     } else if (pointers.size === 2) {
       const [a, b] = [...pointers.values()];
       const d = Math.hypot(a.x - b.x, a.y - b.y);
-      if (pinchDist > 0) {
+      if (pinchDist > 0 && S.mode !== 'walk') {
         const mid = { sx: (a.x + b.x) / 2, sy: (a.y + b.y) / 2 };
         setZoom(cam.z * (d / pinchDist), mid);
       }
@@ -143,6 +157,7 @@ export function initInput(el, handlers) {
 
   el.addEventListener('wheel', (e) => {
     e.preventDefault();
+    if (S.mode === 'walk') return; // first person has a fixed focal length
     const r = canvas.getBoundingClientRect();
     const factor = Math.exp(-e.deltaY * 0.0012);
     setZoom(cam.z * factor, { sx: e.clientX - r.left, sy: e.clientY - r.top });
