@@ -22,6 +22,7 @@ export const S = {
   day: 1,
   tday: 0,              // seconds elapsed in current day
   speed: 1,             // 0 | 1 | 3
+  mode: 'plan',         // 'plan' (isometric overview) | 'walk' (street level)
   money: ECON.startMoney,
   pop: ECON.startPop,
   happy: 55,
@@ -200,3 +201,22 @@ export function gridAt(x, y) { return (x < 0 || y < 0 || x >= MAP || y >= MAP) ?
 export function isWater(x, y) { return (x < 0 || y < 0 || x >= MAP || y >= MAP) ? false : S.terrain[y][x].w; }
 export function isRoad(x, y) { const g = gridAt(x, y); return !!g && (g.k === 'road' || g.k === 'bridge'); }
 export function fmtMoney(n) { return '₹' + Math.round(n).toLocaleString('en-IN'); }
+
+// walkers can stand on open land and roads/bridges; buildings, trees, water block
+export function isWalkable(x, y) {
+  if (x < 0 || y < 0 || x >= MAP || y >= MAP) return false;
+  if (S.terrain[y][x].w) return false;
+  const g = S.grid[y][x];
+  return !g || g.k === 'road' || g.k === 'bridge';
+}
+export function nearestWalkable(x, y, radius = 6) {
+  if (isWalkable(x, y)) return { x, y };
+  for (let r = 1; r <= radius; r++) {
+    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+      if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+      const nx = x + dx, ny = y + dy;
+      if (isWalkable(nx, ny)) return { x: nx, y: ny };
+    }
+  }
+  return null;
+}

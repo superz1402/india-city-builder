@@ -1,11 +1,14 @@
 // render.js — draws one full frame: sky, terrain, depth-sorted buildings and
 // agents, night-light pass, weather, festival effects, and the build ghost.
+// v2: camera-yaw aware (drag to look around), street-level walk mode with
+// your avatar, named residents with name tags, and emote bubbles.
 
 import { S, MAP, gridAt } from './state.js';
 import { TW, TH, cam, isoOf, screenToWorld, worldToScreen } from './iso.js';
 import { drawBuilding, drawPerson, drawCow, drawVehicle, lights, beginFrame, setLightOrigin } from './arts.js';
 import { isNight, hourOfDay, seasonOf } from './sim.js';
 import { getAgents } from './agents.js';
+import { getPlayer, getWalkers, walkActive } from './walk.js';
 
 let ctx = null, canvas = null, W = 0, H = 0, dpr = 1;
 let ghost = null; // {key, x, y, ok}
@@ -27,7 +30,7 @@ export function resize() {
 }
 
 function skyColors(h) {
-  // keyframed by hour: [night, dawn, noon, dusk]
+  // keyframed by REAL IST hour: [night, dawn, noon, dusk]
   const keys = [
     [0, [13, 18, 44]], [5.5, [13, 18, 44]], [7, [255, 183, 128]], [10, [168, 214, 235]],
     [16, [168, 214, 235]], [18.5, [244, 150, 90]], [20, [58, 48, 90]], [21.5, [13, 18, 44]], [24, [13, 18, 44]],
@@ -50,7 +53,7 @@ export function render(now) {
   const festival = S.festival ? S.festival.id : null;
   beginFrame();
 
-  // ---- sky ----
+  // ---- sky (real IST hour drives it) ----
   const [r, g, b] = skyColors(hour);
   const grd = ctx.createLinearGradient(0, 0, 0, H);
   grd.addColorStop(0, `rgb(${r},${g},${b})`);
@@ -58,7 +61,7 @@ export function render(now) {
   ctx.fillStyle = grd;
   ctx.fillRect(0, 0, W, H);
 
-  // ---- visible tile bounds ----
+  // ---- visible tile bounds (corner mapping is rotation-safe) ----
   const corners = [screenToWorld(0, 0), screenToWorld(W, 0), screenToWorld(0, H), screenToWorld(W, H)];
   let minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
   for (const c of corners) {
@@ -70,9 +73,9 @@ export function render(now) {
   const x0 = Math.max(0, Math.floor(minX) - 3), x1 = Math.min(MAP - 1, Math.ceil(maxX) + 3);
   const y0 = Math.max(0, Math.floor(minY) - 3), y1 = Math.min(MAP - 1, Math.ceil(maxY) + 4);
 
+  // ---- terrain pass + collect depth-sorted drawables ----
+  // v2 sort key: screen y after camera yaw — correct painter order at any orbit.
   const drawables = [];
-
-  // ---- terrain pass ----
   for (let y = y0; y <= y1; y++) {
     for (let x = x0; x <= x1; x++) {
       const i = isoOf(x, y);
@@ -89,33 +92,59 @@ export function render(now) {
         diamond(p.x, p.y); ctx.fill();
       }
       const gd = gridAt(x, y);
-      if (gd) drawables.push({ d: (x + y) * 2 + (y % 2), k: gd.k, x, y, sd: gd.seed });
+      if (gd) drawables.push({ sy: p.y, k: gd.k, x, y, sd: gd.seed });
     }
   }
 
-  // ---- agents ----
+  // ---- ambient agents (people, vehicles, cows) ----
   const agents = getAgents();
   for (const a of agents) {
     const i = isoOf(a.x, a.y);
     const p = worldToScreen(i.x, i.y + TH / 2);
     if (p.x < -60 || p.x > W + 60 || p.y < -80 || p.y > H + 80) continue;
-    drawables.push({ d: (a.x + a.y) * 2 + 1.5, agent: a, sx: p.x, sy: p.y });
+    drawables.push({ sy: p.y + 0.5, agent: a, sx: p.x, sy2: p.y });
+  }
+
+  // ---- walk mode: you + named residents ----
+  const walking = walkActive();
+  if (walking) {
+    const pl = getPlayer();
+    const pi = isoOf(pl.x, pl.y);
+    const pp = worldToScreen(pi.x, pi.y + TH / 2);
+    drawables.push({ sy: pp.y + 0.6, person: pl, sx: pp.x, sy2: pp.y, isPlayer: true });
+    for (const w of getWalkers()) {
+      const wi = isoOf(w.x, w.y);
+      const wp = worldToScreen(wi.x, wi.y + TH / 2);
+      if (wp.x < -60 || wp.x > W + 60 || wp.y < -80 || wp.y > H + 80) continue;
+      drawables.push({ sy: wp.y + 0.6, person: w, sx: wp.x, sy2: wp.y, name: w.name });
+    }
   }
 
   // ---- sort & draw world objects ----
-  drawables.sort((a, b) => a.d - b.d);
+  drawables.sort((a, b) => a.sy - b.sy);
   const env = { t, night, season, festival, seed: 0 };
   for (const dr of drawables) {
     if (dr.agent) {
       const a = dr.agent;
       ctx.save();
-      ctx.translate(dr.sx, dr.sy);
+      ctx.translate(dr.sx, dr.sy2);
       ctx.scale(cam.z, cam.z);
-      setLightOrigin(dr.sx, dr.sy, cam.z);
+      setLightOrigin(dr.sx, dr.sy2, cam.z);
       if (a.kind === 'cow') drawCow(ctx, 0, 0, t, a.ph);
       else if (a.kind === 'person') drawPerson(ctx, 0, 0, a, t);
       else drawVehicle(ctx, 0, 0, a, t, night);
       ctx.restore();
+    } else if (dr.person) {
+      const a = dr.person;
+      ctx.save();
+      ctx.translate(dr.sx, dr.sy2);
+      ctx.scale(cam.z, cam.z);
+      setLightOrigin(dr.sx, dr.sy2, cam.z);
+      drawPerson(ctx, 0, 0, a, t);
+      ctx.restore();
+      if (a.emote) drawEmoteBubble(dr.sx, dr.sy2 - 34 * cam.z, a.emote, t);
+      if (dr.isPlayer) drawNameTag(dr.sx, dr.sy2 - 46 * cam.z, 'You', true);
+      else if (dr.name) drawNameTag(dr.sx, dr.sy2 - 46 * cam.z, dr.name, false);
     } else {
       const i = isoOf(dr.x, dr.y);
       const p = worldToScreen(i.x, i.y);
@@ -153,7 +182,7 @@ export function render(now) {
   if (season === 'winter') fog();
   if (season === 'summer') { ctx.fillStyle = 'rgba(255,150,40,.05)'; ctx.fillRect(0, 0, W, H); }
 
-  // ---- build ghost ----
+  // ---- build ghost (plan mode only) ----
   if (ghost && ghost.x != null) {
     const i = isoOf(ghost.x, ghost.y);
     const p = worldToScreen(i.x, i.y);
@@ -179,6 +208,72 @@ function diamond(cx, cy) {
   ctx.moveTo(cx, cy - TH / 2); ctx.lineTo(cx + TW / 2, cy);
   ctx.lineTo(cx, cy + TH / 2); ctx.lineTo(cx - TW / 2, cy);
   ctx.closePath();
+}
+
+// ---------- name tags & emote bubbles (screen space, walk mode) ----------
+function drawNameTag(x, y, text, isPlayer) {
+  ctx.save();
+  ctx.font = `700 ${Math.max(10, Math.round(9 * Math.max(1, cam.z * 0.55)))}px system-ui, sans-serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const w = ctx.measureText(text).width + 12;
+  const h = 16;
+  ctx.fillStyle = isPlayer ? 'rgba(232,133,12,.94)' : 'rgba(20,16,10,.72)';
+  ctx.beginPath();
+  const rx = x - w / 2, ry = y - h / 2, rad = 8;
+  ctx.moveTo(rx + rad, ry);
+  ctx.arcTo(x + w / 2, ry, x + w / 2, ry + h, rad);
+  ctx.arcTo(x + w / 2, ry + h, rx, ry + h, rad);
+  ctx.arcTo(rx, ry + h, rx, ry, rad);
+  ctx.arcTo(rx, ry, x + w / 2, ry, rad);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#fff7ea';
+  ctx.fillText(text, x, y + 0.5);
+  ctx.restore();
+}
+
+function drawEmoteBubble(x, y, kind, t) {
+  const pop = Math.min(1, ((t * 1) % 1) * 8); // snappy pop-in
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(pop, pop);
+  ctx.fillStyle = 'rgba(255,250,241,.96)';
+  ctx.strokeStyle = 'rgba(36,28,18,.25)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(0, 0, 13, 0, 7); ctx.fill(); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(-4, 11); ctx.lineTo(0, 17); ctx.lineTo(4, 11);
+  ctx.closePath(); ctx.fill();
+  ctx.translate(0, 0.5);
+  if (kind === 'heart') {
+    ctx.fillStyle = '#e0304e';
+    ctx.beginPath();
+    ctx.moveTo(0, 5);
+    ctx.bezierCurveTo(-7, 0, -5, -6, 0, -2.5);
+    ctx.bezierCurveTo(5, -6, 7, 0, 0, 5);
+    ctx.fill();
+  } else if (kind === 'diya') {
+    ctx.fillStyle = '#b45309';
+    ctx.beginPath(); ctx.ellipse(0, 3.5, 6.5, 2.6, 0, 0, 7); ctx.fill();
+    const fl = Math.sin(t * 9) * 0.8;
+    ctx.fillStyle = '#ff9800';
+    ctx.beginPath(); ctx.ellipse(fl, -1.5, 2.2, 3.6, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = '#ffd54f';
+    ctx.beginPath(); ctx.ellipse(fl, -0.8, 1.1, 2, 0, 0, 7); ctx.fill();
+  } else if (kind === 'wave') {
+    ctx.strokeStyle = '#f5b880'; ctx.lineWidth = 4.4; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-2, 5); ctx.lineTo(-2, -3); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-2, -2); ctx.lineTo(-2, -6.5); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(1, -2); ctx.lineTo(1.5, -6); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(4, -1); ctx.lineTo(5, -4.5); ctx.stroke();
+    ctx.strokeStyle = 'rgba(36,28,18,.5)'; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(7, -6); ctx.lineTo(9.5, -8); ctx.moveTo(8, -1.5); ctx.lineTo(11, -2.5); ctx.stroke();
+  } else if (kind === 'namaste') {
+    ctx.strokeStyle = '#c98850'; ctx.lineWidth = 3.6; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-5, 5); ctx.lineTo(-2, -4); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(5, 5); ctx.lineTo(2, -4); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-5, 5); ctx.lineTo(0, 6.5); ctx.lineTo(5, 5); ctx.stroke();
+  }
+  ctx.restore();
 }
 
 // ---------- festival effects (night: diyas + lanterns; day: colour + parade) ----------

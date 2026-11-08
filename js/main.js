@@ -1,10 +1,12 @@
 // main.js — boot, game loop, input wiring, autosave, error surface.
+// v2: street-level walk mode is updated per frame; keys feed the walker.
 
 import { S, MAP, newGame, pushNotice, canPlace } from './state.js';
 import { initInput, centerOn, setZoom, zoomBy, cam, resize as camResize, screenToTile } from './iso.js';
 import { initRender, render, setGhost, resize as renderResize } from './render.js';
 import { tick as simTick } from './sim.js';
 import { update as agentsUpdate, clearAgents } from './agents.js';
+import { update as walkUpdate, walkActive, setKey, clearKeys } from './walk.js';
 import { initUi, handleTap, tick as uiTick, setTool, getTool, updateSpeedIcon } from './ui.js';
 import { saveGame, loadGame, hasSave, clearSave } from './save.js';
 import { sfx } from './audio.js';
@@ -48,10 +50,10 @@ function continueSaved() {
 window.__startNew = startNew;
 window.__continue = continueSaved;
 
-// ghost preview follows the pointer while a tool is active
+// ghost preview follows the pointer while a tool is active (plan mode only)
 let lastGhostTile = null;
 canvas.addEventListener('pointermove', (e) => {
-  if (!getTool()) { if (lastGhostTile) { lastGhostTile = null; setGhost(null); } return; }
+  if (walkActive() || !getTool()) { if (lastGhostTile) { lastGhostTile = null; setGhost(null); } return; }
   const r = canvas.getBoundingClientRect();
   const t = screenToTile(e.clientX - r.left, e.clientY - r.top);
   if (lastGhostTile && lastGhostTile.x === t.x && lastGhostTile.y === t.y) return;
@@ -63,6 +65,19 @@ canvas.addEventListener('pointermove', (e) => {
   setGhost({ key: getTool(), x: t.x, y: t.y, ok });
 });
 
+// ---------- keyboard: walker + UI ----------
+const WALK_KEYS = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ShiftLeft', 'ShiftRight'];
+document.addEventListener('keydown', (e) => {
+  if (walkActive() && WALK_KEYS.includes(e.code)) {
+    setKey(e.code, true);
+    if (e.code.startsWith('Arrow')) e.preventDefault();
+  }
+});
+document.addEventListener('keyup', (e) => {
+  if (WALK_KEYS.includes(e.code)) setKey(e.code, false);
+});
+window.addEventListener('blur', clearKeys);
+
 function loop(last) {
   return function frame(now) {
     const dt = Math.min(0.05, (now - last) / 1000);
@@ -70,6 +85,7 @@ function loop(last) {
     try {
       simTick(dt);
       agentsUpdate(dt, now / 1000);
+      walkUpdate(dt, now / 1000);
       render(now);
       uiTick();
     } catch (e) {
@@ -86,7 +102,7 @@ function init() {
 
   initInput(canvas, {
     onTapTile: (tile, screen) => handleTap(tile, screen),
-    onDragStart: () => { /* pan started; ghost will refresh on next move */ },
+    onDragStart: () => { /* pan/orbit started; ghost will refresh on next move */ },
   });
 
   initUi();

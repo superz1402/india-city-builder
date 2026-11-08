@@ -2,10 +2,12 @@
 
 ![Gameplay at Diwali night](docs/screenshot.png)
 
-**Build your own India — from chhota gaon to mahanagar.** A free, zero-dependency
-browser city-builder: place mandirs, dhabas and chai tapris, watch people in
-sarees and kurtas walk your gullies, dodge the sacred cow stuck on the main
-road, and celebrate Diwali under fireworks.
+**Build your own India — then walk its streets, in real Indian time.** A free,
+zero-dependency browser city-builder with a street-level walk mode: place
+mandirs, dhabas and chai tapris, deed homes and shops to residents (they own
+them like a metaverse), watch people in sarees and kurtas walk your gullies,
+dodge the sacred cow stuck on the main road, and celebrate Diwali under
+fireworks — all on the **actual Indian Standard Time clock**.
 
 **Play: [superz1402.github.io/india-city-builder](https://superz1402.github.io/india-city-builder/)**
 
@@ -13,6 +15,16 @@ road, and celebrate Diwali under fireworks.
 
 ## What's inside
 
+- **Walk mode (v2)** — be a visitor in your own city. Third-person avatar with
+  WASD/arrows or an on-screen joystick, Shift/RUN to jog, drag to look around,
+  gamepad support, emotes (wave, namaste, diya, heart) with name tags. "You + N
+  nearby", just like the reference.
+- **Real IST day–night (v2)** — the sky, lamps and citizen schedules follow the
+  actual clock in India (UTC+5:30). 8 pm IST looks like 8 pm IST.
+- **Metaverse ownership (v2)** — every home and shop can have a deed. Assign
+  owners in game (tap building → Assign owner) or in code (`js/owners.js`).
+  Residents live by their deeds: home at night, shop by day, evening strolls.
+  Search any name to find their home.
 - **Isometric 2.5D world** — fully procedural canvas art, no image assets.
   35+ Indian building types: jhuggis to flat blocks, kirana shops to textile
   mills, mandir / masjid / gurudwara / church, mela ground with an animated
@@ -26,8 +38,6 @@ road, and celebrate Diwali under fireworks.
 - **Festivals & seasons** — Diwali (diyas + fireworks), Eid (lanterns), Holi
   (colour), Republic Day (tricolor parade), Baisakhi (harvest bonus). Summer
   heat, monsoon rain that doubles paddy, winter fog.
-- **Day–night cycle** — windows light up, street lamps glow, cinema marquee
-  blinks, all rendered as a light pass over the world.
 - **Desi audio** — a synthesized tabla loop + tanpura drone + SFX via WebAudio.
   No audio files, off by default, one tap to enable.
 - **Autosave** — versioned localStorage save every 10 s and on tab hide.
@@ -36,11 +46,43 @@ road, and celebrate Diwali under fireworks.
 
 | Action | Desktop | Mobile |
 | --- | --- | --- |
-| Pan | drag | drag |
+| Pan the map | drag | drag |
+| Rotate / look | rotate buttons; in walk: drag | same |
 | Zoom | scroll / +− buttons | pinch / +− buttons |
 | Build | click card → click map | tap card → tap map |
-| Inspect / remove | click placed building | tap placed building |
+| Inspect / owner / remove | click placed building | tap placed building |
+| **Walk** | Walk button → WASD/arrows, Shift run, drag look, 1-4 emotes | Walk button → joystick, RUN, emote buttons |
+| Visit a resident | search name or People & homes panel | same |
 | Pause / speed | Space or the HUD button | HUD button |
+
+## Own the code: buildings & residents (for the city owner)
+
+Everything is code-side. Two files to edit:
+
+**1. Add or change a building — `js/data.js`**
+
+```js
+// add one line to BUILDINGS, then one draw case in js/arts.js
+library: { name: 'Public Library', cat: 'civic', cost: 8000, upkeep: 10,
+           jobs: 4, happy: 6, cover: 6, pw: -1, tier: 2, draw: 'library',
+           desc: 'Silence, fans, and every Tintin.' },
+```
+The build menu, thumbnails, economy and unlock tiers pick it up automatically.
+
+**2. Add a resident / give them a home or shop — `js/owners.js`**
+
+```js
+export const RESIDENTS = ['Aarav Sharma', 'Meera Sharma' /* add names */];
+export const ASSIGNMENTS = [
+  { name: 'Aarav Sharma', home: '17,18', shop: '20,14' },  // tiles as "x,y"
+];
+```
+
+- Deeds attach to map tiles; the building on the tile can be rebuilt freely.
+- Residents appear in search, the People & homes panel, and physically walk
+  near their properties with name tags, on the real IST clock.
+- In-game assignments (tap building → Assign owner) persist in the browser;
+  this code file always wins for the same name.
 
 ## Run it yourself
 
@@ -60,14 +102,17 @@ and guards against committed secrets on every push.
 index.html            shell + HUD skeleton + inline SVG icon set
 css/style.css         tokens-first design system (light/dark chrome)
 js/data.js            building defs, economy constants, festivals, tiers
-js/state.js           game state, terrain gen, placement rules, aggregates
-js/iso.js             isometric projection, camera, pointer/pinch input
+js/state.js           game state, terrain gen, placement rules, walkability
+js/clock.js           REAL Indian Standard Time (UTC+5:30) — sky & schedules
+js/owners.js          the deed book: residents + who owns which home/shop
+js/walk.js            walk mode: avatar, joystick/keys/gamepad, resident AI
+js/iso.js             isometric projection, orbit camera, pointer/pinch input
 js/render.js          frame compositor: terrain, depth sort, night, weather
 js/arts.js            the procedural art kit (buildings, people, vehicles, cows)
 js/sim.js             daily economy tick, happiness, growth, seasons, events
 js/agents.js          people / vehicle / cow random-walk agents
 js/events.js          festival lifecycle + celebration
-js/ui.js              HUD, build menu, panels, notices (DOM layer)
+js/ui.js              HUD, build menu, panels, search, deed UI (DOM layer)
 js/audio.js           WebAudio tabla loop, drone, SFX
 js/save.js            versioned localStorage save/load
 js/main.js            boot, loop, autosave, error surface

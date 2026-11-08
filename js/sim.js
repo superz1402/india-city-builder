@@ -5,10 +5,12 @@ import { S, pushNotice, recomputeStats, currentTierIdx, fmtMoney, MAP } from './
 import { BUILDINGS, TIERS, SEASONS, SEASON_DAYS, ECON, FESTIVALS, FEST_EVERY, EVENTS } from './data.js';
 import { spawnFestivalFx, endFestivalFx } from './events.js';
 import { cowCount as agentsCowCount } from './agents.js';
+import { hourOfDay, isNight } from './clock.js';
 
+// v2: the sky and lamps follow the REAL Indian clock (IST). Re-exported here
+// so render/ui keep a single import surface.
+export { hourOfDay, isNight };
 export function seasonOf(day) { return SEASONS[Math.floor((day - 1) / SEASON_DAYS) % 4]; }
-export function hourOfDay() { return (7 + (S.tday / ECON.daySeconds) * 24) % 24; }
-export function isNight() { const h = hourOfDay(); return h >= 19.5 || h < 5.5; }
 
 export function tick(dt) {
   if (S.speed === 0) return;

@@ -110,9 +110,55 @@ See the architecture tree in `README.md`. Conventions:
 - [ ] Screenshots attached for UI changes.
 - [ ] Issue closed with evidence; `worklog.md` updated.
 - [ ] Everything pushed to `origin/main`.
+- [ ] Push VERIFIED: `git ls-remote --heads origin` shows your HEAD sha. A
+      commit that only exists locally is not done.
 
-## 8. Roadmap ideas (claim via issue before building)
+## 9. Credentials & auto-health (v2 addendum — owner directive)
 
-Walk mode (street-level camera like the original's), camera rotation, building
-upgrade levels, policies (tax slider, night curfew), train station + tracks,
-save export codes, Hindi-first i18n toggle, PWA offline mode.
+**Token handling (hard rules):**
+- The GitHub token lives in exactly ONE place: the `origin` remote URL inside
+  `.git/config` (`git remote set-url origin https://user:TOKEN@github.com/…`).
+  `.git/config` is never committed. NEVER write it into any tracked file,
+  script, doc, issue or worklog. NEVER echo it to chat output.
+- If the owner pastes a token in chat (they will), configure it silently,
+  confirm auth with a status-code check only, and remind them — once, briefly
+  — to rotate it after the session since chat is not a secret store.
+- `health.yml` greps pushes for token-like strings; keep it that way.
+
+**Session-sensitivity & auto-health:**
+- This sandbox is wiped without warning. Git is the only memory. Commit early,
+  commit often — a clean working tree at every natural pause, not just at
+  session end.
+- A scheduled auto-health job (cron "Apna Shehar auto-health checkpoint",
+  every 15 min) runs: `git pull` → syntax-check `js/*.js` → if green,
+  commit any dirty files as `chore: auto-health checkpoint` and push; if a
+  file is broken it does NOT commit (broken code never reaches main).
+- The cron is a safety net, not a substitute for the §0 rule: session close
+  still means test → commit → push → worklog.
+
+**Task board discipline (owner directive):**
+- Every unit of work = one GitHub issue, filed BEFORE the code (§2). Build →
+  verify with screenshots → close with evidence in the same session.
+- `worklog.md` is upgraded after EVERY task, same push, with what shipped,
+  how it was verified, and the commit sha. An out-of-date worklog is a
+  failed task.
+
+**Learning mandate (UI is the weak point):**
+- Before UI work, analyse the owner's repos in depth: `bilal140202`,
+  `ansaribilal14`, `superz1402` (see §6). UI changes follow
+  agent-ui-playbook laws (§4) without exception.
+
+## 8. v2 product direction (owner directive, Nov 2025)
+
+The play pattern is buildacountry.github.io: visitors WALK the city anytime
+(avatar + joystick/controller), day-night follows REAL Indian Standard Time,
+and residents own their homes and shops like a metaverse deed book. Building
+and resident creation is code-side (data.js + owners.js) — the owner extends
+the city by editing code, not by clicking. See `js/owners.js` header for the
+owner's guide and `README.md` for the code-side building guide.
+
+## 9. Roadmap ideas (claim via issue before building)
+
+Building upgrade levels, policies (tax slider, night curfew), train station +
+tracks, save export codes, Hindi-first i18n toggle, PWA offline mode,
+auto-tour camera (reference-style).

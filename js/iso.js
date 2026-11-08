@@ -1,19 +1,37 @@
-// iso.js — isometric projection, camera, and unified mouse/touch input.
-// Control model mirrors the original buildacountry: drag to pan,
-// wheel/pinch to zoom, tap to place or inspect.
+// iso.js — isometric projection, orbit camera, and unified mouse/touch input.
+// Control model mirrors the original buildacountry: drag to pan (or to look
+// around in walk mode), wheel/pinch to zoom, tap to place or inspect.
+// v2 adds a camera yaw (cam.rot): the world rotates around its focus while
+// sprites stay upright — "drag to look around" at street level.
 
 export const TW = 64, TH = 32;
-import { MAP } from './state.js';
+import { S, MAP } from './state.js';
 
-export const cam = { x: 0, y: 0, z: 1 };
+export const cam = { x: 0, y: 0, z: 1, rot: 0, py: 0.5 }; // py = screen-y anchor for the focus point
 
 export function isoOf(x, y) { return { x: (x - y) * (TW / 2), y: (x + y) * (TH / 2) }; }
+
+function rotCache() { return { c: Math.cos(cam.rot), s: Math.sin(cam.rot) }; }
+
 export function screenToWorld(sx, sy) {
-  return { x: (sx - vw / 2) / cam.z + cam.x, y: (sy - vh / 2) / cam.z + cam.y };
+  const { c, s } = rotCache();
+  const rx = (sx - vw / 2) / cam.z;
+  const ry = (sy - vh * cam.py) / cam.z;
+  // inverse-rotate the screen offset into world space
+  const wx = rx * c + ry * s;
+  const wy = -rx * s + ry * c;
+  return { x: wx + cam.x, y: wy + cam.y };
 }
+
 export function worldToScreen(ix, iy) {
-  return { x: (ix - cam.x) * cam.z + vw / 2, y: (iy - cam.y) * cam.z + vh / 2 };
+  const { c, s } = rotCache();
+  const dx = ix - cam.x, dy = iy - cam.y;
+  return {
+    x: (dx * c - dy * s) * cam.z + vw / 2,
+    y: (dx * s + dy * c) * cam.z + vh * cam.py,
+  };
 }
+
 export function screenToTile(sx, sy) {
   const w = screenToWorld(sx, sy);
   const fx = (w.x / (TW / 2) + w.y / (TH / 2)) / 2;
@@ -31,8 +49,17 @@ export function centerOn(tx, ty) {
   cam.x = i.x; cam.y = i.y + TH / 2;
   clampCam();
 }
+export function orbitBy(d) {
+  cam.rot += d;
+  if (cam.rot > Math.PI) cam.rot -= Math.PI * 2;
+  if (cam.rot < -Math.PI) cam.rot += Math.PI * 2;
+}
+export function setOrbit(a) { cam.rot = a; }
+
 export function setZoom(z, pivot) {
-  z = Math.max(0.45, Math.min(2.4, z));
+  const walk = S.mode === 'walk';
+  const min = walk ? 1.5 : 0.45, max = walk ? 3.4 : 2.4;
+  z = Math.max(min, Math.min(max, z));
   if (pivot) {
     const before = screenToWorld(pivot.sx, pivot.sy);
     cam.z = z;
@@ -42,6 +69,7 @@ export function setZoom(z, pivot) {
   clampCam();
 }
 function clampCam() {
+  if (S.mode === 'walk') return; // walk camera follows the player, no clamp
   const i = isoOf(MAP / 2, MAP / 2);
   const span = MAP * (TW / 2) * 0.72;
   cam.x = Math.max(i.x - span, Math.min(i.x + span, cam.x));
@@ -77,8 +105,12 @@ export function initInput(el, handlers) {
     if (pointers.size === 1) {
       if (Math.hypot(e.clientX - downInfo.sx, e.clientY - downInfo.sy) > 9) {
         if (!moved) { moved = true; el.classList.add('dragging'); onDragStart && onDragStart(); }
-        cam.x -= dx / cam.z; cam.y -= dy / cam.z;
-        clampCam();
+        if (S.mode === 'walk') {
+          orbitBy(dx * 0.0062);              // street level: drag = look around
+        } else {
+          cam.x -= dx / cam.z; cam.y -= dy / cam.z;
+          clampCam();
+        }
       }
     } else if (pointers.size === 2) {
       const [a, b] = [...pointers.values()];
