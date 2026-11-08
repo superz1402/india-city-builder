@@ -169,8 +169,19 @@ export function tick() {
     const txt = n > 0 ? `You + ${n} nearby` : 'Just you here';
     const chip = $('walk-chip');
     if (chip.textContent !== txt) chip.textContent = txt;
+    // where-am-I chip — the district you are walking through (first person)
+    const p0 = getPlayer();
+    const where = $('walk-where');
+    if (where) {
+      const dtxt = districtOf(Math.floor(p0.x), Math.floor(p0.y));
+      if (where.textContent !== dtxt) where.textContent = dtxt;
+      where.hidden = false;
+    }
     // nearest deed chip (reference walkNear: whose home am I passing?)
     updateWalkNear();
+  } else {
+    const where = $('walk-where');
+    if (where) where.hidden = true;
   }
 
   // rush-hour whispers (Toy Town Rush Hour): announce the tide, once each way
@@ -222,13 +233,25 @@ export function tick() {
   }
 }
 
+// the ward you're in — Mahanagar's five bands plus the riverside orchards.
+// Mirrors generateCity's district bands (state.js).
+function districtOf(x, y) {
+  if (y <= 8) return 'Riverside orchards';
+  if (x < 9) return y < 26 ? 'Green Belt' : 'West Fields';
+  if (y < 17) return 'Civil Lines';
+  if (y < 25) return 'CBD';
+  if (y < 33) return 'Old Mohalla';
+  if (y < 41) return 'Colony';
+  return 'Industrial Edge';
+}
+
 // whose door is nearest while you walk — owned deeds show the owner's name,
 // available buildings read as TO-LET (the street-level ownership scan)
 function updateWalkNear() {
   const el = $('walk-near');
   if (!el) return;
   const p = getPlayer();
-  let best = null, bd = 6.5;
+  let best = null, bd = 6;
   const px = Math.floor(p.x), py = Math.floor(p.y);
   for (let dy = -6; dy <= 6; dy++) for (let dx = -6; dx <= 6; dx++) {
     const x = px + dx, y = py + dy;
@@ -486,7 +509,7 @@ function initWalkControls() {
     sfx.click();
     enterWalk();
     const phone = matchMedia('(pointer: coarse)').matches || window.innerWidth < 720;
-    pushNotice(phone ? 'Use the joystick to walk. Drag anywhere to look around.' : 'WASD or arrow keys to walk, Shift to run. Drag to look around.', 'good');
+    pushNotice(phone ? 'You are on the street — joystick to walk, drag to look around.' : 'You are on the street. WASD or arrows to walk, Shift to run, drag to look around.', 'good');
   });
   $('btn-exit-walk').addEventListener('click', () => { sfx.click(); exitWalk(); });
   $('btn-run').addEventListener('click', () => {

@@ -58,7 +58,7 @@ export function setOrbit(a) { cam.rot = a; }
 
 export function setZoom(z, pivot) {
   const walk = S.mode === 'walk';
-  const min = walk ? 1.5 : 0.45, max = walk ? 3.4 : 2.4;
+  const min = walk ? 1.5 : 0.45, max = walk ? 4.6 : 2.4;
   z = Math.max(min, Math.min(max, z));
   if (pivot) {
     const before = screenToWorld(pivot.sx, pivot.sy);

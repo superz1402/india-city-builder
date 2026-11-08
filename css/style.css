@@ -488,6 +488,18 @@ body.walking .festival-banner { top: calc(var(--hud-h) + env(safe-area-inset-top
   box-shadow: var(--shadow-soft);
   backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
 }
+/* where-am-I chip: the district you're walking through */
+.walk-where {
+  background: var(--chrome); border: 1px solid rgba(255, 176, 58, .35);
+  border-radius: 999px; padding: 8px 15px;
+  font: 700 13px var(--font); color: var(--accent-ink);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  max-width: 44vw; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+}
+@media (max-width: 719px) {
+  .walk-where { display: none; } /* phones keep the top row clean */
+}
 .walk-legend .lg { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
 .walk-legend .lg.owned { background: var(--good); box-shadow: 0 0 8px rgba(53, 212, 154, .8); }
 .walk-legend .lg.vacant { background: var(--warn); box-shadow: 0 0 8px rgba(255, 176, 58, .8); }

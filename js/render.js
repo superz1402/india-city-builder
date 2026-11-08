@@ -3,7 +3,7 @@
 // v2: camera-yaw aware (drag to look around), street-level walk mode with
 // your avatar, named residents with name tags, and emote bubbles.
 
-import { S, MAP, gridAt } from './state.js';
+import { S, MAP, gridAt, isWater } from './state.js';
 import { TW, TH, cam, isoOf, screenToWorld, worldToScreen } from './iso.js';
 import { drawBuilding, drawPerson, drawCow, drawVehicle, drawDoorPlate, lights, beginFrame, setLightOrigin } from './arts.js';
 import { BUILDINGS } from './data.js';
@@ -108,8 +108,13 @@ export function render(now) {
   }
 
   // ---- terrain pass + collect depth-sorted drawables ----
-  // v2 sort key: screen y after camera yaw — correct painter order at any orbit.
+  // v5 ground: a warm dust ramp (no more olive mud), flecked texture, banked
+  // water with a pale shelf; the plate system is capped and distance-ranked
+  // so the street keeps its hierarchy.
   const drawables = [];
+  const plates = [];
+  const roadNb = (x, y) => { const g = gridAt(x, y); return !!g && (g.k === 'road' || g.k === 'bridge'); };
+  const GROUND = ['#c9b78a', '#c2ae7e', '#d1c096', '#bda674', '#c5b283'];
   for (let y = y0; y <= y1; y++) {
     for (let x = x0; x <= x1; x++) {
       const i = isoOf(x, y);
@@ -118,27 +123,37 @@ export function render(now) {
       if (!tv) continue;
       if (tv.w) {
         const shimmer = 0.5 + 0.5 * Math.sin(t * 1.8 + tv.v);
-        ctx.fillStyle = `rgb(${58 + shimmer * 14},${122 + shimmer * 10},${158 + shimmer * 12})`;
-        diamond(p.x, p.y); ctx.fill();
+        const bank = !(isWater(x - 1, y) && isWater(x + 1, y) && isWater(x, y - 1) && isWater(x, y + 1));
+        if (bank) {
+          ctx.fillStyle = `rgb(${74 + shimmer * 12},${142 + shimmer * 10},${172 + shimmer * 10})`;
+          diamond(p.x, p.y); ctx.fill();
+          ctx.fillStyle = 'rgba(228,244,248,.25)'; // pale shelf at the waterline
+          diamond(p.x, p.y + 1, 0.9, 0.9); ctx.fill();
+        } else {
+          ctx.fillStyle = `rgb(${54 + shimmer * 12},${122 + shimmer * 10},${154 + shimmer * 12})`;
+          diamond(p.x, p.y); ctx.fill();
+        }
       } else {
-        const g = 148 + (tv.v % 5) * 7;
-        ctx.fillStyle = `rgb(${g + 24},${g + 22},${(tv.v % 3) * 6 + 84})`;
+        ctx.fillStyle = GROUND[tv.v % GROUND.length];
         diamond(p.x, p.y); ctx.fill();
+        if (((tv.v >> 2) % 4) === 0) { // sparse fleck texture
+          ctx.fillStyle = 'rgba(255,255,255,.05)';
+          diamond(p.x, p.y - 1, 0.55, 0.55); ctx.fill();
+        }
       }
       const gd = gridAt(x, y);
       if (gd) {
-        drawables.push({ sy: p.y, k: gd.k, x, y, sd: gd.seed, kb: gd.knobs || null });
+        drawables.push({ sy: p.y, k: gd.k, x, y, sd: gd.seed, kb: gd.knobs || null,
+          rd: gd.k === 'road' ? { n: roadNb(x, y - 1), s: roadNb(x, y + 1), w: roadNb(x - 1, y), e: roadNb(x + 1, y) } : null });
         // ownership at the door: plates at street level, status dots on the map
         const kind = deedableKind(gd.k);
         if (kind) {
           const own = deedMap.get(x + ',' + y);
           if (walking && pl) {
             const dist = Math.hypot(x + 0.5 - pl.x, y + 0.5 - pl.y);
-            if (dist < 9.5) {
-              drawables.push({
-                sy: p.y + 2, sx: p.x, sy2: p.y + 2,
-                plate: { dist, info: own && own.length ? { owned: true, name: own[0].name, kind: own[0].kind } : { owned: false, kind } },
-              });
+            const lim = own && own.length ? 9.5 : 6.2; // ACQUIRED carries farther than TO-LET whispers
+            if (dist < lim) {
+              plates.push({ dist, sx: p.x, sy: p.y, info: own && own.length ? { owned: true, name: own[0].name, kind: own[0].kind } : { owned: false, kind } });
             }
           } else if (!walking) {
             drawables.push({ sy: p.y + 1.5, sx: p.x, sy2: p.y + 1.5, dot: { owned: !!(own && own.length) } });
@@ -148,6 +163,12 @@ export function render(now) {
     }
   }
 
+  // nearest plates only, so ten signs never shout over one street
+  plates.sort((a, b) => a.dist - b.dist);
+  for (const pl2 of plates.slice(0, 9)) {
+    drawables.push({ sy: pl2.sy + 2, sx: pl2.sx, sy2: pl2.sy + 2, plate: { dist: pl2.dist, info: pl2.info } });
+  }
+
   // ---- ambient agents (people, vehicles, cows) ----
   // time-lapse rhythm (lens on, plan mode): agents step in 0.16-tile quantised
   // hops — wind-up toys on a model railway. Walk mode stays real time; cows
@@ -155,19 +176,26 @@ export function render(now) {
   const tlStep = isLensOn() && !walking ? 0.16 : 0;
   const agents = getAgents();
   for (const a of agents) {
-    const ax = tlStep && a.kind !== 'cow' ? Math.round(a.x / tlStep) * tlStep : a.x;
-    const ay = tlStep && a.kind !== 'cow' ? Math.round(a.y / tlStep) * tlStep : a.y;
+    let ax = tlStep && a.kind !== 'cow' ? Math.round(a.x / tlStep) * tlStep : a.x;
+    let ay = tlStep && a.kind !== 'cow' ? Math.round(a.y / tlStep) * tlStep : a.y;
+    if (a.kind === 'vehicle') { // right-hand traffic: offset into the lane
+      ax += -(a.mdy || 0) * 0.16;
+      ay += (a.mdx || 0) * 0.16;
+    }
     const i = isoOf(ax, ay);
     const p = worldToScreen(i.x, i.y + TH / 2);
     if (p.x < -60 || p.x > W + 60 || p.y < -80 || p.y > H + 80) continue;
     drawables.push({ sy: p.y + 0.5, agent: a, sx: p.x, sy2: p.y });
   }
 
-  // ---- walk mode: you + named residents ----
+  // ---- walk mode: true first person — YOU are the walker. No avatar body,
+  // no "You" tag: a soft ground ring + a heading chevron mark your spot
+  // (owner directive, issue #23; deviation from buildacountry's third-person
+  // street view is documented in docs/WALK-REFERENCE.md).
   if (walking) {
     const pi = isoOf(pl.x, pl.y);
     const pp = worldToScreen(pi.x, pi.y + TH / 2);
-    drawables.push({ sy: pp.y + 0.6, person: pl, sx: pp.x, sy2: pp.y, isPlayer: true });
+    drawables.push({ sy: pp.y + 0.55, fp: true, sx: pp.x, sy2: pp.y });
     for (const w of getWalkers()) {
       const wi = isoOf(w.x, w.y);
       const wp = worldToScreen(wi.x, wi.y + TH / 2);
@@ -185,11 +213,45 @@ export function render(now) {
       ctx.save();
       ctx.translate(dr.sx, dr.sy2);
       ctx.scale(cam.z, cam.z);
+      if (a.kind === 'vehicle') {
+        // orient the sprite down its lane (screen angle incl. camera yaw),
+        // smoothed so turns read as turns
+        const mdx = a.mdx == null ? 1 : a.mdx, mdy = a.mdy || 0;
+        const vxi = (mdx - mdy) * 32, vyi = (mdx + mdy) * 16;
+        const crc = Math.cos(cam.rot), srn = Math.sin(cam.rot);
+        const ta = Math.atan2(vxi * srn + vyi * crc, vxi * crc - vyi * srn);
+        if (a.ang == null) a.ang = ta;
+        else {
+          let d = ta - a.ang;
+          while (d > Math.PI) d -= Math.PI * 2;
+          while (d < -Math.PI) d += Math.PI * 2;
+          a.ang += d * 0.14;
+        }
+        ctx.rotate(a.ang);
+      }
       setLightOrigin(dr.sx, dr.sy2, cam.z);
       if (a.kind === 'cow') drawCow(ctx, 0, 0, t, a.ph);
       else if (a.kind === 'person') drawPerson(ctx, 0, 0, a, t);
       else drawVehicle(ctx, 0, 0, a, t, night);
       ctx.restore();
+    } else if (dr.fp) {
+      // first-person footprint: soft ring at your feet + heading chevron
+      const z = Math.max(1, cam.z);
+      ctx.save();
+      ctx.translate(dr.sx, dr.sy2);
+      ctx.fillStyle = 'rgba(255,176,58,.16)';
+      ctx.beginPath(); ctx.ellipse(0, 0, 8 * z, 3.4 * z, 0, 0, 7); ctx.fill();
+      const ang = pl.hAng || 0;
+      const moving = pl.moving;
+      ctx.globalAlpha = moving ? 0.6 : 0.16;
+      ctx.translate(Math.cos(ang) * 16 * z, Math.sin(ang) * 8 * z);
+      ctx.rotate(ang);
+      ctx.fillStyle = '#ffb03a';
+      ctx.beginPath();
+      ctx.moveTo(7 * z, 0); ctx.lineTo(-3 * z, -4.6 * z); ctx.lineTo(-1 * z, 0); ctx.lineTo(-3 * z, 4.6 * z);
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+      if (pl.emote) drawEmoteBubble(dr.sx, dr.sy2 - 26 * z, pl.emote, t);
     } else if (dr.plate) {
       // door plate: ACQUIRED nameplate or TO-LET board, fading with distance
       ctx.save();
@@ -206,10 +268,10 @@ export function render(now) {
       ctx.save();
       ctx.translate(dr.sx, dr.sy2);
       ctx.scale(cam.z, cam.z);
-      ctx.globalAlpha = 0.92;
+      ctx.globalAlpha = 0.78;
       ctx.fillStyle = dr.dot.owned ? 'rgba(53,212,154,.95)' : 'rgba(255,176,58,.92)';
-      ctx.strokeStyle = 'rgba(0,0,0,.4)'; ctx.lineWidth = 0.8;
-      ctx.beginPath(); ctx.moveTo(0, -3.4); ctx.lineTo(5.4, 0); ctx.lineTo(0, 3.4); ctx.lineTo(-5.4, 0); ctx.closePath();
+      ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 0.8;
+      ctx.beginPath(); ctx.moveTo(0, -3); ctx.lineTo(4.8, 0); ctx.lineTo(0, 3); ctx.lineTo(-4.8, 0); ctx.closePath();
       ctx.fill(); ctx.stroke();
       ctx.globalAlpha = 1;
       ctx.restore();
@@ -222,13 +284,14 @@ export function render(now) {
       drawPerson(ctx, 0, 0, a, t);
       ctx.restore();
       if (a.emote) drawEmoteBubble(dr.sx, dr.sy2 - 34 * cam.z, a.emote, t);
-      if (dr.isPlayer) drawNameTag(dr.sx, dr.sy2 - 46 * cam.z, 'You', true);
-      else if (dr.name) drawNameTag(dr.sx, dr.sy2 - 46 * cam.z, dr.name, false);
+      if (dr.name) drawNameTag(dr.sx, dr.sy2 - 46 * cam.z, dr.name, false);
     } else {
       const i = isoOf(dr.x, dr.y);
       const p = worldToScreen(i.x, i.y);
       env.seed = dr.sd;
       env.knobs = dr.kb;
+      env.roads = dr.rd;
+      env.rot = cam.rot;
       setLightOrigin(p.x, p.y, cam.z);
       ctx.save();
       ctx.translate(p.x, p.y);
@@ -256,7 +319,7 @@ export function render(now) {
       ctx.beginPath(); ctx.arc(p.x, p.y - top - 1.5, 1.8 * Math.max(0.8, cam.z), 0, 7); ctx.fill();
       lights.push({ x: p.x, y: p.y - top, r: 30, c: 'rgba(255,200,110,.20)' });
     }
-    const na = hour >= 19.5 || hour < 5 ? 0.5 : 0.3;
+    const na = hour >= 19.5 || hour < 5 ? 0.42 : 0.26;
     ctx.fillStyle = `rgba(12,16,52,${na})`;
     ctx.fillRect(0, 0, W, H);
     ctx.globalCompositeOperation = 'lighter';
@@ -273,15 +336,15 @@ export function render(now) {
     // stay smooth while the cars themselves time-lapse — exactly the
     // reference film's dawn opening.
     if (isLensOn()) {
-      const rc = Math.cos(cam.rot), rs = Math.sin(cam.rot);
       let trails = 0;
       for (const a of agents) {
         if (a.kind !== 'vehicle' || trails > 42) continue;
         const i = isoOf(a.x, a.y);
         const p = worldToScreen(i.x, i.y + TH / 2);
         if (p.x < -90 || p.x > W + 90 || p.y < -70 || p.y > H + 70) continue;
-        const L = 26 * cam.z * (a.dir || 1);
-        const tx = p.x - L * rc, ty = p.y - L * rs;
+        const an = a.ang || 0;
+        const L = 26 * cam.z;
+        const tx = p.x - L * Math.cos(an), ty = p.y - L * Math.sin(an);
         const tg = ctx.createLinearGradient(p.x, p.y, tx, ty);
         tg.addColorStop(0, 'rgba(255,226,150,.4)');
         tg.addColorStop(1, 'rgba(255,226,150,0)');
@@ -331,10 +394,10 @@ export function render(now) {
   lensCompose(vctx, { night });
 }
 
-function diamond(cx, cy) {
+function diamond(cx, cy, sx = 1, sy = 1) {
   ctx.beginPath();
-  ctx.moveTo(cx, cy - TH / 2); ctx.lineTo(cx + TW / 2, cy);
-  ctx.lineTo(cx, cy + TH / 2); ctx.lineTo(cx - TW / 2, cy);
+  ctx.moveTo(cx, cy - (TH / 2) * sy); ctx.lineTo(cx + (TW / 2) * sx, cy);
+  ctx.lineTo(cx, cy + (TH / 2) * sy); ctx.lineTo(cx - (TW / 2) * sx, cy);
   ctx.closePath();
 }
 

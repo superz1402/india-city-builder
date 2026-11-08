@@ -38,7 +38,7 @@ function makePerson(x, y) {
   };
 }
 
-function makeVehicle(x, y) {
+function makeVehicle(x, y, mdx = 1, mdy = 0) {
   const shops = (S.counts.bazaar || 0) + (S.counts.dhaba || 0) + (S.counts.kirana || 0);
   const companies = (S.counts.office || 0) + (S.counts.tower || 0) + (S.counts.mall || 0) + (S.counts.hotel || 0);
   let vkind = 'auto';
@@ -54,6 +54,7 @@ function makeVehicle(x, y) {
   const bodyCols = ['#c62828', '#1565c0', '#2e7d32', '#f5f5f5', '#6d4c41', '#7b1fa2', '#37474f'];
   return {
     kind: 'vehicle', vkind, x, y, tx: x, ty: y, dir: 1, ph: rng() * 6.28,
+    mdx, mdy, // lane direction (world axes) — render.js orients the sprite down it
     speed: vkind === 'cycle' ? 0.9 : vkind === 'bullock' ? 0.4 : vkind === 'bus' ? 0.75 : vkind === 'car' ? 1.15 : vkind === 'taxi' ? 1.05 : 0.95,
     bodyCol: bodyCols[Math.floor(rng() * bodyCols.length)],
     riderCol: ['#37474f', '#c62828', '#1565c0'][Math.floor(rng() * 3)],
@@ -168,7 +169,14 @@ export function update(dt, t) {
       // arrived: pick next
       const roadOnly = a.kind === 'vehicle';
       const n = nextTarget(a, roadOnly);
-      if (n) { a.tx = n[0]; a.ty = n[1]; if (n[0] !== Math.round(a.x)) a.dir = n[0] > a.x ? 1 : -1; }
+      if (n) {
+        a.tx = n[0]; a.ty = n[1];
+        if (a.kind === 'vehicle') {
+          const ndx = Math.sign(n[0] - Math.round(a.x)), ndy = Math.sign(n[1] - Math.round(a.y));
+          if (ndx || ndy) { a.mdx = ndx; a.mdy = ndy; }
+        }
+        if (n[0] !== Math.round(a.x)) a.dir = n[0] > a.x ? 1 : -1;
+      }
       else { a.tx = Math.round(a.x); a.ty = Math.round(a.y); }
       if (a.kind === 'cow' && Math.random() < 0.25) a.wait = 1 + Math.random() * 3; // cows idle. a lot.
       continue;

@@ -1,8 +1,10 @@
-// walk.js — street-level "wander" mode (v2 rehaul, mirrors buildacountry).
-// You control THE one walker: WASD/arrow keys or the on-screen joystick,
-// Shift to run, drag to look around, emotes with keys 1-4. Only FOUR fake
-// humans share the street — the [NPC] residents of the deed book (owners.js),
-// each tagged in their name so they read as pretend, not players.
+// walk.js — street-level walk mode, v5: TRUE FIRST PERSON. You are the
+// walker: no avatar body, the camera lives where you stand (owner directive,
+// issue #23 — a documented deviation from buildacountry's third-person view).
+// WASD/arrow keys or the on-screen joystick, Shift to run, drag to look
+// around, emotes with keys 1-4. Only FOUR fake humans share the street — the
+// [NPC] residents of the deed book (owners.js), each tagged so they read as
+// pretend, not players.
 
 import { S, MAP, isWalkable, nearestWalkable, gridAt } from './state.js';
 import { cam, setZoom, isoOf, orbitBy } from './iso.js';
@@ -42,11 +44,12 @@ export function enterWalk() {
   // place the walker on a sensible street near the map centre
   const spot = nearestWalkable(Math.floor(MAP / 2), Math.floor(MAP / 2) + 2, 8) || { x: 18, y: 20 };
   player.x = spot.x + 0.5; player.y = spot.y + 0.5;
-  cam.py = 0.62;
+  player.hAng = cam.rot ? cam.rot : Math.PI / 4; // chevron points where you look
+  cam.py = 0.58;
   const i = isoOf(player.x, player.y);
-  cam.x = i.x; cam.y = i.y + 16;
+  cam.x = i.x; cam.y = i.y + 10;
   cam.rot = cam.rot || Math.PI / 4;
-  setZoom(2.6);
+  setZoom(3.2); // first person lives close to the street
   spawnWalkers();
   document.body.classList.add('walking');
   syncWalkButtons();
@@ -158,6 +161,7 @@ export function update(dt, t) {
   if (mag > 1) { jx /= mag; jy /= mag; }
 
   player.moving = mag > 0.08;
+  let mwx = 0, mwy = 0;
   if (player.moving) {
     // rotate the screen-space direction into world space (inverse cam yaw)
     const c = Math.cos(cam.rot), s = Math.sin(cam.rot);
@@ -167,16 +171,26 @@ export function update(dt, t) {
     moveWithCollision(player, wx * speed * dt, wy * speed * dt);
     if (Math.abs(wx) > 0.12) player.dir = wx > 0 ? 1 : -1;
     player.ph += dt * (player.run ? 13 : 9);
+    mwx = wx; mwy = wy;
+    // first-person heading (screen-space angle for the ground chevron)
+    const vxi = (wx - wy) * 32, vyi = (wx + wy) * 16;
+    const crc = Math.cos(cam.rot), srn = Math.sin(cam.rot);
+    const ta = Math.atan2(vxi * srn + vyi * crc, vxi * crc - vyi * srn);
+    if (player.hAng == null) player.hAng = ta;
+    else {
+      let d = ta - player.hAng;
+      while (d > Math.PI) d -= Math.PI * 2;
+      while (d < -Math.PI) d += Math.PI * 2;
+      player.hAng += d * Math.min(1, dt * 10);
+    }
   } else {
     player.ph += dt * 1.2; // idle breathing
   }
 
-  // camera follows, softly
+  // camera IS the walker in first person: no lead, tight follow
   const i = isoOf(player.x, player.y);
-  const lead = 10;
-  const tx = i.x + (player.moving ? (player.dir * lead) : 0);
-  cam.x += (tx - cam.x) * Math.min(1, dt * 6);
-  cam.y += (i.y + 16 - cam.y) * Math.min(1, dt * 6);
+  cam.x += (i.x - cam.x) * Math.min(1, dt * 7);
+  cam.y += (i.y + 10 - cam.y) * Math.min(1, dt * 7);
 
   updateWalkers(dt, t);
 }
@@ -243,6 +257,6 @@ export function teleportTo(x, y) {
   player.moving = false;
   if (walkActive()) {
     const i = isoOf(player.x, player.y);
-    cam.x = i.x; cam.y = i.y + 16;
+    cam.x = i.x; cam.y = i.y + 10;
   }
 }

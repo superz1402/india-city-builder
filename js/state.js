@@ -104,8 +104,10 @@ export function newGame(seed = (Date.now() % 100000)) {
 // ═════════════════════════════════════════════════════════════════════
 const AVENUES = [9, 17, 25, 33, 41];
 
-// block interior ring fill — walks the perimeter clockwise from NW corner
-function ringFill(x0, y0, x1, y1, list, reserved, rstate) {
+// block interior ring fill — walks the perimeter clockwise from NW corner.
+// v5: optional knobsFn gives each district a coherent paint story (the
+// polyfork knob system, applied per-block by generateCity).
+function ringFill(x0, y0, x1, y1, list, reserved, rstate, knobsFn = null) {
   const cells = [];
   for (let x = x0; x <= x1; x++) cells.push([x, y0]);
   for (let y = y0 + 1; y <= y1; y++) cells.push([x1, y]);
@@ -115,19 +117,41 @@ function ringFill(x0, y0, x1, y1, list, reserved, rstate) {
     if (S.grid[y][x] || S.terrain[y][x].w) return;
     if (reserved.has(x + ',' + y)) return;
     const key = list[(i + rstate.o) % list.length];
-    placeRaw(x, y, key);
+    placeRaw(x, y, key, knobsFn ? knobsFn(x, y, key) : null);
     rstate.o = (rstate.o + (i % 3 === 0 ? 1 : 0)) % Math.max(1, list.length);
   });
 }
 
 // courtyard fill — green centres with breathing gaps for walkers
-function courtyardFill(x0, y0, x1, y1, list) {
+function courtyardFill(x0, y0, x1, y1, list, knobsFn = null) {
   for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
     if (S.grid[y][x] || S.terrain[y][x].w) continue;
     if ((x + y) % 3 === 0) continue; // walker gaps
-    placeRaw(x, y, list[(x * 5 + y * 3) % list.length]);
+    const key = list[(x * 5 + y * 3) % list.length];
+    placeRaw(x, y, key, knobsFn ? knobsFn(x, y, key) : null);
   }
 }
+
+// ---- district paint stories (every value is a legal KNOBS option) ----
+const pick = (arr, x, y, salt = 0) => arr[Math.abs(x * 7 + y * 13 + salt * 29) % arr.length];
+const MOHALLA = {
+  pakka: (x, y) => ({ paint: pick(['pink', 'ochre', 'teal', 'cream'], x, y) }),          // jaipur-pink gullies
+  kaccha: (x, y) => ({ wall: pick(['rose', 'cream', 'wheat'], x, y), roof: pick(['tile', 'thatch'], x, y, 1) }),
+  chawl: (x, y) => ({ wash: pick(['multicolour', 'pastel', 'plain'], x, y) }),
+};
+const CIVIL = {
+  bungalow: (x, y) => ({ paint: pick(['ivory', 'sage', 'sky'], x, y), roof: pick(['clay', 'slate'], x, y, 2) }),
+  haveli: (x, y) => ({ stone: pick(['sandstone', 'redstone', 'marble'], x, y) }),
+  pakka: (x, y) => ({ paint: pick(['cream', 'ochre'], x, y) }),
+  villa: (x, y) => ({ paint: pick(['ivory', 'concrete', 'sand'], x, y) }),
+};
+const CBD = { office: (x, y) => ({ glass: pick(['azure', 'teal', 'smoke'], x, y) }) };
+const COLONY = {
+  flats: (x, y) => ({ paint: pick(['sand', 'sage', 'mist'], x, y) }),
+  pakka: (x, y) => ({ paint: pick(['cream', 'teal'], x, y) }),
+  chawl: MOHALLA.chawl,
+};
+const knobsFor = (dirs) => (x, y, key) => (dirs[key] ? dirs[key](x, y) : null);
 
 export function generateCity() {
   const reserved = new Set(Object.values(CITY_DEED_TILES).flatMap(d => [d.home, d.shop]));
@@ -160,54 +184,54 @@ export function generateCity() {
   // ---- Block band A (y 10–16): CIVIL LINES — bungalows, havelis, villas ----
   const civilA = ['bungalow', 'haveli', 'bungalow', 'pakka', 'bungalow'];
   const civilB = ['bungalow', 'villa', 'haveli', 'bungalow'];
-  ringFill(10, 10, 16, 16, civilA, reserved, rstate);
+  ringFill(10, 10, 16, 16, civilA, reserved, rstate, knobsFor(CIVIL));
   courtyardFill(11, 11, 15, 15, ['tree', 'tree', 'park', 'tree']);
   placeRaw(15, 13, 'watertank');
-  ringFill(18, 10, 24, 16, civilB, reserved, rstate);
+  ringFill(18, 10, 24, 16, civilB, reserved, rstate, knobsFor(CIVIL));
   courtyardFill(19, 11, 23, 15, ['tree', 'park', 'tree']);
-  ringFill(26, 10, 32, 16, civilA, reserved, rstate);
+  ringFill(26, 10, 32, 16, civilA, reserved, rstate, knobsFor(CIVIL));
   courtyardFill(27, 11, 31, 15, ['tree', 'tree', 'park']);
-  ringFill(34, 10, 40, 16, civilB, reserved, rstate);
+  ringFill(34, 10, 40, 16, civilB, reserved, rstate, knobsFor(CIVIL));
   courtyardFill(35, 11, 39, 15, ['tree', 'park', 'tree', 'tree']);
   placeRaw(37, 13, 'watertank');
   ringFill(42, 10, 47, 16, ['mango', 'wheat', 'tree', 'mango'], reserved, rstate);
 
   // ---- Block band B (y 18–24): CBD — companies, tower, mall, hotel ----
   const cbdRing = ['office', 'office', 'bank', 'office', 'cinema', 'office', 'jeweller', 'office'];
-  ringFill(10, 18, 16, 24, cbdRing, reserved, rstate);
+  ringFill(10, 18, 16, 24, cbdRing, reserved, rstate, knobsFor(CBD));
   courtyardFill(11, 19, 15, 23, ['tree', 'tree']);
-  ringFill(18, 18, 24, 24, cbdRing, reserved, rstate);
+  ringFill(18, 18, 24, 24, cbdRing, reserved, rstate, knobsFor(CBD));
   placeRaw(21, 21, 'tower'); // the skyline
   placeRaw(23, 19, 'flag'); placeRaw(19, 23, 'tree'); placeRaw(23, 23, 'tree');
-  ringFill(26, 18, 32, 24, cbdRing, reserved, rstate);
+  ringFill(26, 18, 32, 24, cbdRing, reserved, rstate, knobsFor(CBD));
   placeRaw(29, 21, 'mall');
   placeRaw(27, 19, 'tree'); placeRaw(31, 19, 'hotel');
-  ringFill(34, 18, 40, 24, cbdRing, reserved, rstate);
+  ringFill(34, 18, 40, 24, cbdRing, reserved, rstate, knobsFor(CBD));
   courtyardFill(35, 19, 39, 23, ['tree', 'tree']);
-  ringFill(42, 18, 47, 24, cbdRing, reserved, rstate);
+  ringFill(42, 18, 47, 24, cbdRing, reserved, rstate, knobsFor(CBD));
 
   // ---- Block band C (y 26–32): OLD MOHALLA & BAZAAR ----
-  ringFill(10, 26, 16, 32, ['pakka', 'kaccha', 'pakka', 'chawl', 'pakka'], reserved, rstate);
+  ringFill(10, 26, 16, 32, ['pakka', 'kaccha', 'pakka', 'chawl', 'pakka'], reserved, rstate, knobsFor(MOHALLA));
   placeRaw(13, 29, 'mandir'); placeRaw(11, 29, 'masjid');
   placeRaw(15, 29, 'gurudwara'); placeRaw(13, 31, 'church'); placeRaw(13, 27, 'tree');
   ringFill(18, 26, 24, 32, ['chai', 'kirana', 'bazaar', 'chai', 'saree', 'kirana', 'dhaba', 'chai', 'bazaar'], reserved, rstate);
   placeRaw(21, 29, 'chai'); placeRaw(19, 31, 'tree'); placeRaw(23, 31, 'watertank');
-  ringFill(26, 26, 32, 32, ['chawl', 'pakka', 'chawl', 'pakka', 'kaccha', 'chawl'], reserved, rstate);
+  ringFill(26, 26, 32, 32, ['chawl', 'pakka', 'chawl', 'pakka', 'kaccha', 'chawl'], reserved, rstate, knobsFor(MOHALLA));
   placeRaw(29, 29, 'watertank'); placeRaw(27, 27, 'police');
-  ringFill(34, 26, 40, 32, ['pakka', 'kaccha', 'pakka', 'chai', 'pakka'], reserved, rstate);
+  ringFill(34, 26, 40, 32, ['pakka', 'kaccha', 'pakka', 'chai', 'pakka'], reserved, rstate, knobsFor(MOHALLA));
   placeRaw(37, 29, 'cinema'); placeRaw(39, 27, 'tree'); placeRaw(35, 31, 'tree');
-  ringFill(42, 26, 47, 32, ['pakka', 'kaccha', 'pakka', 'tree'], reserved, rstate);
+  ringFill(42, 26, 47, 32, ['pakka', 'kaccha', 'pakka', 'tree'], reserved, rstate, knobsFor(MOHALLA));
 
   // ---- Block band D (y 34–40): COLONY — flats, schools, parks ----
-  ringFill(10, 34, 16, 40, ['flats', 'pakka', 'flats', 'pakka', 'flats'], reserved, rstate);
+  ringFill(10, 34, 16, 40, ['flats', 'pakka', 'flats', 'pakka', 'flats'], reserved, rstate, knobsFor(COLONY));
   placeRaw(13, 37, 'school'); placeRaw(15, 39, 'park'); placeRaw(11, 39, 'tree');
-  ringFill(18, 34, 24, 40, ['flats', 'pakka', 'flats', 'pakka'], reserved, rstate);
+  ringFill(18, 34, 24, 40, ['flats', 'pakka', 'flats', 'pakka'], reserved, rstate, knobsFor(COLONY));
   placeRaw(21, 37, 'maidan'); placeRaw(19, 39, 'park'); placeRaw(23, 39, 'tree');
-  ringFill(26, 34, 32, 40, ['flats', 'pakka', 'flats', 'chawl', 'flats'], reserved, rstate);
+  ringFill(26, 34, 32, 40, ['flats', 'pakka', 'flats', 'chawl', 'flats'], reserved, rstate, knobsFor(COLONY));
   placeRaw(29, 37, 'hospital'); placeRaw(31, 39, 'watertank'); placeRaw(27, 39, 'tree');
-  ringFill(34, 34, 40, 40, ['pakka', 'flats', 'pakka', 'flats'], reserved, rstate);
+  ringFill(34, 34, 40, 40, ['pakka', 'flats', 'pakka', 'flats'], reserved, rstate, knobsFor(COLONY));
   placeRaw(37, 37, 'busstand'); placeRaw(39, 39, 'substation'); placeRaw(35, 39, 'tree');
-  ringFill(42, 34, 47, 40, ['pakka', 'flats', 'pakka'], reserved, rstate);
+  ringFill(42, 34, 47, 40, ['pakka', 'flats', 'pakka'], reserved, rstate, knobsFor(COLONY));
   placeRaw(45, 37, 'mela'); placeRaw(43, 39, 'tree');
 
   // ---- Block band E (y 42–47): INDUSTRIAL EDGE & FIELDS ----
@@ -221,12 +245,17 @@ export function generateCity() {
 
   // ---- Green belt west of the first avenue + river north bank ----
   for (const [gy0, gy1] of [[10, 16], [18, 24], [26, 32], [34, 40]]) {
-    courtyardFill(0, gy0, 8, gy1, ['tree', 'wheat', 'tree', 'park', 'tree']);
+    courtyardFill(0, gy0, 8, gy1, ['tree', 'wheat', 'tree', 'park', 'tree', 'mango']);
   }
   placeRaw(5, 29, 'watertank'); placeRaw(7, 37, 'substation'); placeRaw(7, 21, 'substation');
+  // dense riverside: orchard rows up north, a breathing tree wall below the bank
   for (let x = 0; x < MAP; x++) for (let y = 0; y <= 8; y++) {
     if (S.grid[y][x] || S.terrain[y][x].w) continue;
-    if ((x * 7 + y * 11) % 4 === 0) placeRaw(x, y, y <= 2 ? ((x % 3) ? 'wheat' : 'mango') : 'tree');
+    if (y <= 3) placeRaw(x, y, (x + y) % 3 === 0 ? 'mango' : 'wheat');
+    else {
+      if ((x * 5 + y * 3) % 7 === 0) continue; // small clearings
+      placeRaw(x, y, x % 3 === 0 ? 'mango' : 'tree');
+    }
   }
 }
 

@@ -74,6 +74,7 @@
   <!-- Walk HUD (street level) -->
   <div id="walk-hud" aria-label="Walking controls">
     <div class="walk-top">
+      <span id="walk-where" class="walk-where" hidden></span>
       <span id="walk-chip" class="walk-chip">Just you here</span>
       <button id="btn-exit-walk" class="pill-btn exit" title="Back to the map"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg>Exit walk</button>
     </div>
@@ -135,7 +136,7 @@
     <div class="help-body">
       <p><b>A whole city waits.</b> Mahanagar comes pre-built in code — Civil Lines bungalows, a CBD of companies and towers, the Old Mohalla bazaar, a residential colony, factories and farms. Extend it: pick from the dock and tap the map.</p>
       <p><b>Own it like a metaverse.</b> Tap any home or shop → <i>Assign owner</i> → pick one of the four [NPC] residents. Green plates at doors mean ACQUIRED; cream boards mean TO-LET — available for a new owner.</p>
-      <p><b>Walk the streets.</b> Press <i>Walk</i>. WASD/arrows or the joystick to move, Shift or RUN to jog, drag to look around, 1-4 to emote. Only four fake humans ([NPC] tags) stroll the city — wave at them; everyone else here is you.</p>
+      <p><b>Walk the streets — first person.</b> Press <i>Walk</i> and you ARE the walker: no puppet on the screen, the camera lives where you stand. WASD/arrows or the joystick to move, Shift or RUN to jog, drag to look around, 1-4 to emote. The marigold chevron on the ground shows your heading. Only four fake humans ([NPC] tags) stroll the city — wave at them; everyone else here is you.</p>
       <p><b>Read the doors.</b> Every deed-able building shows its status at the door while you walk. Tap a door to inspect it, or search a resident's name to visit their place.</p>
       <p><b>Keep everyone happy.</b> Faith places, parks, schools and hospitals raise Khush-hali. Companies bring jobs and cars; factories bring smoke — balance with trees.</p>
       <p><b>Watch the meters.</b> Water tanks, substations and food stocks must cover a growing city.</p>
@@ -186,11 +187,11 @@
       <p class="welcome-sub">A whole Indian city, built and waiting — walk its streets, in real Indian time.</p>
       <div class="welcome-chips">
         <span class="w-chip">Pre-built Mahanagar</span>
+        <span class="w-chip">First-person streets</span>
         <span class="w-chip">Real IST day-night</span>
         <span class="w-chip">Own homes &amp; shops</span>
-        <span class="w-chip">Green plates = acquired</span>
       </div>
-      <p class="welcome-tip">Doors tell you who owns what: green plates are ACQUIRED, cream boards are TO-LET. Press Walk to be the visitor. The cow has right of way.</p>
+      <p class="welcome-tip">Press Walk and the streets turn first person — you are the walker. Doors tell you who owns what: green plates are ACQUIRED, small cream cards are TO-LET. The cow has right of way.</p>
       <button id="btn-start" class="btn-accent big">Enter the city</button>
       <button id="btn-continue" class="btn-link" hidden>Continue my saved city</button>
     </div>
