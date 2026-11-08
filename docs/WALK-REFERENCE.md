@@ -52,3 +52,26 @@ So the deed book ships exactly **four** citizens, each named with a literal
 `owners.js → RESIDENTS`, walk with the same body renderer, and are the only
 pretend people in the world. Anyone can be added in code — keep the `[NPC]`
 tag so visitors never mistake scripted residents for real players.
+
+## v5 deviation — TRUE FIRST PERSON (owner directive, issue #23)
+
+> "I need first person view meaning the person walking in city should be me"
+
+buildacountry's street view is **third person**: slot 0 of the body batch is
+your avatar, the camera hovers behind it. Apna Shehar v5 deliberately
+**deviates**:
+
+| Aspect | buildacountry | Apna Shehar v5 |
+| --- | --- | --- |
+| Your body | drawn (slot 0), "You" name tag | **not drawn at all** — you ARE the camera; a soft ground ring + a marigold heading chevron (`player.hAng`, smoothed) mark your spot |
+| Camera | behind + above the avatar | anchored at the walker's tile (`cam.py 0.58`), no lead, tight follow (`dt*7`) |
+| Zoom | fixed feel | starts 3.2, wheel/pinch range 1.5–4.6 (step in closer) |
+| Enter toast | "WASD or arrow keys to walk…" | "You are on the street. WASD or arrows to walk, Shift to run, drag to look around." |
+| Where chip | — | `#walk-where`: the district you're crossing (Civil Lines, CBD, Old Mohalla…) |
+| Door plates | — | ACQUIRED nameplates carry 9.5 tiles; TO-LET whispers within 6.2; nearest 7 rendered |
+
+Everything else (state machine, axis-separated collision R=0.24, joystick,
+gamepad, 1.5 s emote rate limit, four [NPC] residents) stays in parity with
+the reference study above. The marigold chevron is the only concession to
+orientation — at street level in an orbiting isometric projection, "which way
+am I facing" needs one quiet cue.

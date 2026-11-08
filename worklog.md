@@ -452,3 +452,87 @@ copied; grammar only, same discipline as the polyfork round.
 **Ops**
 - Pushed to origin/main, verified via ls-remote; issue #21 closed with
   evidence. catalog v4 regenerated (`node scripts/catalog.mjs`).
+
+## 2026-11-09 — v5 "First-Person Rehaul" shipped by Z.ai agent session (issue #23)
+
+**Owner directive (verbatim)**
+> "I need rehaul the city looks shit from start to end ,also I need first person view meaning the person walking in city should be me"
+
+**Diagnosis (looked before rebuilding)**
+- qa-2-city-overview / qa-10-lens-walk study: the v3/v4 world read as khaki
+  mud with confetti — olive ground ramp, side-view cars sliding sideways, ~30
+  giant TO-LET billboards shouting over one street, a visible third-person
+  avatar ("You") where the owner wants to BE the walker.
+- Verdict: the UI chrome (Mahanagar Metro glass) was fine; the WORLD was the
+  problem. v5 = world art rebuilt + true first person.
+
+**Build (issue #23, filed before code per §2)**
+- `js/arts.js` (full rewrite, ~1,400 lines): shaded `box()` with contact
+  shadows + roof rim light (steady sun from the upper-left), framed windows
+  (frame, two-tone warm pane at night, sky glint, mullion), doorArch,
+  tankOnStilts (black Sintex on a trestle), acBox, scalloped striped awnings,
+  signBoard (dark plank + gold lettering), upgraded every building case
+  (bungalow compound wall + veranda, haveli jharokhas, flats stilt floor +
+  balconies + clotheslines, kirana sacks + half-shutter, chai jars + menu
+  board, mandir ribbed shikhara + bell, zebra-studded intersections…);
+  direction-aware road art (kerbs, lane dashes rotated by cam yaw, zebra
+  studs at 3+ way crossings, manholes), railed stone bridges, layered
+  canopies; vehicles redrawn nose-to-+x (render rotates them down their
+  lane); **fixed a latent bug**: vehicle/mela lights used raw screen coords,
+  landing every headlight glow at the canvas top-left at night.
+- `js/render.js`: warm dust ground ramp + bank-shelf water (calmed at night —
+  no checkerboard), plate system rebuilt (ACQUIRED carries 9.5 tiles, TO-LET
+  whispers within 6.2, nearest-7 cap, alpha falloff), TRUE FIRST PERSON draw
+  path (no avatar body / no You tag; ground ring + marigold heading chevron
+  from `player.hAng`), vehicle lane orientation + right-hand lane offsets,
+  softer night veil (0.55 late / 0.30 evening), softer plan dots.
+- `js/walk.js` + `js/iso.js`: first-person camera — no lead, tight follow,
+  cam.py 0.58, zoom 3.2 on entry, walk zoom range to 4.6, smoothed heading.
+- `js/agents.js`: vehicles carry lane vectors (mdx/mdy) so render can orient
+  them; right-hand traffic via a +90° lane offset.
+- `js/state.js`: district paint stories via the polyfork knob system
+  (Mohalla pinks/ochres/teals, Civil Lines ivory/sage/sky + roof knob, CBD
+  glass trio, Colony pastels), dense riverside orchards + SW corner planted —
+  the map now counts 1,461 placed tiles (was ~700 visible).
+- UI: `#walk-where` district chip (Civil Lines / CBD / Old Mohalla…), FP copy
+  in help/welcome/enter-toast, chips list updated.
+
+**Concurrency incident (documented for future sessions)**
+- A concurrent session was writing into the SAME worktree mid-task: a
+  perspective-projection street renderer (`js/fpv.js`, up to 52 KB) plus a
+  `palette.js`, pointer-lock mouse look in iso.js, a walk minimap + look-hint
+  + compass in ui.js, and a rewritten walk.js — layered on my files while I
+  QA'd. Its half-wired overlays repeatedly broke boot (ReferenceErrors,
+  missing exports, a syntax error in its minimap), and one `git add -A`
+  swept a contaminated render.js/walk.js/iso.js/state.js INTO commits
+  69dd7db/36d4803 — which briefly shipped a broken module graph to Pages.
+- Resolution: both experiment overlays preserved VERBATIM as
+  `docs/fpv-concurrent-wip.patch` (1,388 lines) and
+  `docs/concurrent-ui-wip.patch`; every contaminated file restored to the
+  verified 413f628 state; final code pushed as 3fcc9f1 after a full re-QA.
+  Lesson (now policy): `git add -A` is forbidden while a concurrent writer
+  is live — stage named files only.
+
+**QA (agent-browser, headless Chromium; 1280×800 + 390×844)**
+- `node --input-type=module --check` every module OK; `scripts/test-city.mjs`
+  ALL GREEN (deed tiles intact, roads 99.6% connected, 6,122 homes, 2,235
+  jobs, pop 2,571, four [NPC] residents).
+- Boot → welcome → Enter: zero console errors (verified on a fresh origin
+  after cache-busting). Plan view at night (3:43 am IST): warm sand ground,
+  grounded buildings, readable street lattice — docs/qa-v5-plan-night.png,
+  docs/qa-v5-plan-wide.png.
+- Walk FP: no avatar, marigold chevron leads while walking, Old Mohalla chip,
+  ACQUIRED [NPC] Arjun plate + quiet TO-LET cards, signboards read street
+  level — docs/qa-v5-walk-firstperson.png, docs/qa-v5-fp-street.png.
+- Civil Lines bungalow belt + railed bridge over the river —
+  docs/qa-v5-civil-lines.png. Mobile 390×844: joystick + emotes + plates
+  intact, district chip hidden by design — docs/qa-v5-mobile-fp.png.
+- Movement verified end-to-end via dispatched KeyEvents (walk-near chip
+  changes as you pass doors: "[NPC] Arjun's shop · Dhaba" → "TO-LET · Bank").
+- Known cosmetic: lane-dash/zebra angles update only on redraw of road tiles
+  (static art) — correct at any fixed yaw; vehicle orientation math verified
+  against worldToScreen (iso delta rotated by cam.rot).
+
+**Ops**
+- Pushed to origin/main (verified via ls-remote → 3fcc9f1); issue #23 closed
+  with evidence. Pages redeploys from main automatically.

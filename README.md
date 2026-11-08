@@ -24,10 +24,15 @@ Standard Time clock**.
 - **Door plates (v3)** — walk the streets and read ownership at the doors: green ACQUIRED
   nameplates carry the owner's name; cream TO-LET boards mark what's still available. The map
   view shows green/amber doorstep dots; tap any door for its deed card.
-- **Walk mode (v2)** — be a visitor in your own city. Third-person avatar with
-  WASD/arrows or an on-screen joystick, Shift/RUN to jog, drag to look around,
-  gamepad support, emotes (wave, namaste, diya, heart) with name tags. "You + N
-  nearby", just like the reference.
+- **Walk mode — true first person (v5)** — press Walk and **you are the walker**: no puppet,
+  the camera lives where you stand (WASD/arrows or the on-screen joystick, Shift/RUN to jog,
+  drag to look around, gamepad support, emotes with name tags, and a marigold heading chevron
+  on the ground). "You + N nearby", just like the reference — minus the puppet.
+- **A world rebuilt (v5)** — warm dust ground with banked water, contact shadows under every
+  structure, framed windows that glow warm at night, chhajjas / parapets / rooftop tanks /
+  striped awnings / hand-painted signboards, direction-aware roads (kerbs, lane dashes, zebra
+  crossings, manholes), district paint stories (Jaipur-pink Mohalla, ivory Civil Lines, glass
+  CBD), traffic that drives down its lane, and a plate system that whispers instead of shouts.
 - **Real IST day–night (v2)** — the sky, lamps and citizen schedules follow the
   actual clock in India (UTC+5:30). 8 pm IST looks like 8 pm IST.
 - **Tilt-Shift Miniature lens (v4)** — the city is filmed like a toy model:
