@@ -30,10 +30,14 @@ export const PAL = {
 // face brightness for the SE sun — indexed the same way in both renderers
 export const FACE_LIGHT = { S: 1.0, E: 0.9, W: 0.72, N: 0.62, T: 1.07 };
 
-// shade("#c4553a", 0.8) → darkened; f>1 lightens toward warm white
-export function shade(hex, f) {
-  const n = parseInt(hex.slice(1), 16);
-  let r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+// shade(color, 0.8) → darkened; f>1 lightens toward warm white.
+// Accepts every palette colour shape this codebase produces — '#rrggbb'
+// hex AND the 'rgb(r,g,b)' strings that mix()/shade() themselves return
+// (issue #25: parseInt on 'rgb(...)' used to yield NaN → pure-black walls
+// in first-person view all day). parseCol below is the one shared parser.
+export function shade(col, f) {
+  const [r0, g0, b0] = parseCol(col);
+  let r = r0, g = g0, b = b0;
   if (f <= 1) {
     r = Math.round(r * f); g = Math.round(g * f); b = Math.round(b * f);
   } else {
