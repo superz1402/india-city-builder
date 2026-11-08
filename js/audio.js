@@ -115,4 +115,24 @@ export const sfx = {
   error() { blip(220, 0.16, 'square', 0.1, 180); },
   moo() { blip(200, 0.5, 'sawtooth', 0.12, 130); },
   festival() { [523, 587, 698, 784, 1046].forEach((f, i) => setTimeout(() => blip(f, 0.22, 'sawtooth', 0.08), i * 130)); },
+  // rush-hour traffic: the classic two-tone Indian horn, muted and distant —
+  // adapted from the tilt-shift demo's "tuned car-horn chords" (low-passed
+  // square pair, quiet enough to sit under the tabla loop)
+  horn() {
+    if (!enabled || !ctxA) return;
+    const t0 = ctxA.currentTime;
+    const toot = (f, at, dur, g) => {
+      const o = ctxA.createOscillator(), gn = ctxA.createGain(), fl = ctxA.createBiquadFilter();
+      o.type = 'square'; o.frequency.setValueAtTime(f, t0 + at);
+      fl.type = 'lowpass'; fl.frequency.value = 850; fl.Q.value = 1.4;
+      gn.gain.setValueAtTime(0.0001, t0 + at);
+      gn.gain.exponentialRampToValueAtTime(g, t0 + at + 0.035);
+      gn.gain.setValueAtTime(g, t0 + at + dur * 0.6);
+      gn.gain.exponentialRampToValueAtTime(0.0001, t0 + at + dur);
+      o.connect(fl).connect(gn).connect(sfxBus);
+      o.start(t0 + at); o.stop(t0 + at + dur + 0.05);
+    };
+    toot(392, 0, 0.2, 0.035);
+    toot(330, 0.24, 0.22, 0.03);
+  },
 };

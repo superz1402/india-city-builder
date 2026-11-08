@@ -99,6 +99,8 @@ b, strong { font-weight: 700; }
 .icon-btn:hover { background: rgba(255, 255, 255, .11); border-color: var(--chrome-edge-strong); }
 .icon-btn:active { transform: scale(.93); }
 .icon-btn.small { width: 28px; height: 28px; border-radius: 9px; }
+/* lens toggle: on = the marigold gradient (same accent grammar as knob-chip.on) */
+#btn-lens.on { background: var(--grad); color: #20140a; border-color: transparent; box-shadow: 0 6px 18px rgba(255, 138, 42, .45); }
 @media (min-width: 720px) { .icon-btn { width: 42px; height: 42px; } }
 
 /* focus rings everywhere (playbook Law 10) */

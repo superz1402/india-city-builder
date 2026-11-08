@@ -12,7 +12,7 @@
 - Walk-mode reverse-engineering notes: `docs/WALK-REFERENCE.md` (repo)
 - Regenerate the catalog: `node scripts/catalog.mjs`
 
-## Catalog schema (v3 — adapted from lucas-martinic/polyfork-catalog)
+## Catalog schema (v4 — polyfork schema + lemo-opuscar filmStyles)
 
 ```jsonc
 {
@@ -27,7 +27,13 @@
     "def": "js/data.js BUILDINGS.jhuggi",
     "art": "js/arts.js drawBuilding case 'jhuggi'"
   } ],
-  "residents": [...], "deeds": [...], "tiers": [...], "seasons": [...], "festivals": [...]
+  "residents": [...], "deeds": [...], "tiers": [...], "seasons": [...], "festivals": [...],
+  "filmStyles": [ {
+    "slug": "tilt-shift", "name": "Tilt-Shift Miniature", "film": "Toy Town Rush Hour",
+    "line": "Morning rush hour in a town that looks like a model: traffic, trains and tiny people.",
+    "adaptedAs": { "postFx": "js/tiltshift.js", "rushHour": "js/clock.js rushLevel()", ... },
+    "source": "https://github.com/lemomo-ai/lemo-opuscar — styles/tilt-shift"
+  } ]
 }
 ```
 
@@ -58,6 +64,25 @@ tap a knobbed building — the tile card lists each knob as a row of chips
 ("Looks"). Tap a chip to pin that option; tap the pinned chip again
 (outlined) to return to the seeded look. Pins go through
 `pinKnob(x, y, knob, option)` (`null` unpins) and autosave handles the rest.
+
+## Tilt-Shift Miniature lens (adapted from lemo-opuscar styles/tilt-shift)
+
+The renderer ships a film-style post pass, dependency-free on canvas 2D:
+
+- **Blur band** — only a tilted horizontal strip of the frame is sharp;
+  above/below melts into blur (two masked blur layers = gradual DoF). The
+  band follows the map focus in plan mode and the PLAYER in walk mode.
+- **Grade** — saturation boost, added contrast, warm highlights, vignette;
+  saturation lowered at night.
+- **Toy Town Rush Hour** — `rushLevel()` reads the REAL IST clock: the
+  vehicle fleet (~3 at 6 am → ~54 at peak), speeds and procedural two-tone
+  horns follow India's commute curve (morning ~8–11, evening ~5–8:30 pm).
+- **Time-lapse** — plan mode + lens on: agents step like wind-up toys and
+  run ~2.2×; walk mode stays at real speed (the film's ×40 → ×1 drop).
+- **Native moves** — long-exposure headlight trails at night; cloud shadows
+  sweep the model by day.
+- **Toggle** — cam-rail aperture button or key `T`; persisted in
+  localStorage (`apna-shehar-lens-v1`).
 
 ## Extending the city (everything is code-side)
 

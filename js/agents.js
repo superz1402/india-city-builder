@@ -5,6 +5,9 @@
 import { S, MAP, gridAt, isWater, isRoad, makeRng } from './state.js';
 import { OUTFITS, BUILDINGS } from './data.js';
 import { drawPerson, drawCow, drawVehicle } from './arts.js';
+import { rushLevel, commuteLevel } from './clock.js';
+import { isLensOn } from './tiltshift.js';
+import { sfx } from './audio.js';
 
 const rng = makeRng(20260101);
 let agents = [];
@@ -96,11 +99,19 @@ function nextTarget(a, roadOnly) {
 
 export function update(dt, t) {
   if (!S.grid.length) return; // no city yet (welcome screen)
-  // population scaling (Mahanagar caps: a city breathes deeper than a gaon)
-  const wantPeople = Math.max(6, Math.min(110, Math.round(S.pop * 0.22)));
+  // ---- Toy Town Rush Hour: the fleet follows the REAL IST commute curve ----
+  // quiet streets at 6 am, morning peak ~8–11, evening peak ~5–8:30 pm
+  const rush = rushLevel();
+  const commute = commuteLevel();
+  // time-lapse rhythm (lens look): in plan mode the model runs fast in
+  // wind-up-toy steps; walk mode stays at real speed (the film's ×40 → ×1 drop)
+  const timelapse = isLensOn() && S.mode === 'plan' && S.speed > 0 ? 2.2 : 1;
+  const wantPeople = Math.max(6, Math.min(126, Math.round(S.pop * 0.22 * (1 + commute * 0.35))));
   const shops = Object.entries(S.counts).reduce((n, [k, c]) => n + ((BUILDINGS[k] && BUILDINGS[k].income) ? c : 0), 0);
-  const wantVehicles = Math.max(6, Math.min(26, Math.round(shops * 0.28)));
+  const wantVehicles = Math.max(3, Math.min(56, Math.round(Math.max(6, Math.min(26, Math.round(shops * 0.28))) * rush)));
   const wantCows = Math.min(7, 1 + Math.floor(S.pop / 200) + (S.counts.dairy ? 2 : 0));
+  // tuned horns punctuate the peak (STYLE.md score grammar), gently rate-limited
+  if (rush > 1.4 && Math.random() < dt * 0.3) sfx.horn();
 
   spawnAcc += dt;
   if (spawnAcc > 0.4) {
@@ -109,7 +120,11 @@ export function update(dt, t) {
     const vehicles = agents.filter(a => a.kind === 'vehicle').length;
     const cows = agents.filter(a => a.kind === 'cow').length;
     if (people < wantPeople) { const s = randomSpawnTile(false); if (s) agents.push(makePerson(s.x, s.y)); }
-    if (vehicles < wantVehicles) { const s = randomSpawnTile(true); if (s) agents.push(makeVehicle(s.x, s.y)); }
+    if (vehicles < wantVehicles) {
+      const s = randomSpawnTile(true);
+      if (s) agents.push(makeVehicle(s.x, s.y));
+      if (wantVehicles - vehicles > 10 && (s = randomSpawnTile(true))) agents.push(makeVehicle(s.x, s.y)); // rush builds fast
+    }
     if (cows < wantCows) { const s = randomSpawnTile(false); if (s) agents.push(makeCow(s.x, s.y)); }
     // retire a few extras (people fade when population target drops)
     if (people > wantPeople + 4) {
@@ -119,6 +134,7 @@ export function update(dt, t) {
     if (vehicles > wantVehicles + 3) {
       const idx = agents.findIndex(a => a.kind === 'vehicle');
       if (idx >= 0) agents.splice(idx, 1);
+      if (vehicles - wantVehicles > 12 && (idx = agents.findIndex(a => a.kind === 'vehicle')) >= 0) agents.splice(idx, 1);
     }
   }
 
@@ -158,6 +174,8 @@ export function update(dt, t) {
       continue;
     }
     let sp = a.speed * dt;
+    if (a.kind === 'vehicle') sp *= 1 + 0.35 * (rush - 1); // rush hour: everyone drives a bit angrier
+    if (a.kind !== 'cow') sp *= timelapse;                 // cows are above the law of time-lapse
     if (a.kind === 'vehicle' && jam) sp = 0;
     if (a.kind === 'cow') { a.wait -= dt; if (a.wait > 0) continue; }
     a.x += (dx / dist) * Math.min(sp, dist);

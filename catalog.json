@@ -4,10 +4,10 @@
   "api": "https://superz1402.github.io/india-city-builder/llms.txt",
   "repo": "https://github.com/superz1402/india-city-builder",
   "game": "Apna Shehar — India City Builder",
-  "version": 3,
-  "generator": "scripts/catalog.mjs (schema adapted from lucas-martinic/polyfork-catalog)",
-  "generatedAt": "2026-11-08T19:24:38.326Z",
-  "clock": "Asia/Kolkata (UTC+05:30) — real time drives day/night",
+  "version": 4,
+  "generator": "scripts/catalog.mjs (schema adapted from lucas-martinic/polyfork-catalog; filmStyles from lemo-opuscar)",
+  "generatedAt": "2026-11-08T21:50:45.132Z",
+  "clock": "Asia/Kolkata (UTC+05:30) — real time drives day/night and rush-hour traffic",
   "counts": {
     "assets": 48,
     "kits": 8,
@@ -15,7 +15,8 @@
     "residents": 4,
     "categories": 8,
     "festivals": 5,
-    "tiers": 5
+    "tiers": 5,
+    "filmStyles": 1
   },
   "kits": [
     {
@@ -1651,11 +1652,37 @@
       "colors": 3
     }
   ],
+  "filmStyles": [
+    {
+      "slug": "tilt-shift",
+      "name": "Tilt-Shift Miniature",
+      "film": "Toy Town Rush Hour",
+      "line": "Morning rush hour in a town that looks like a model: traffic, trains and tiny people.",
+      "uses": [
+        "City promos",
+        "Real estate",
+        "Transport"
+      ],
+      "adaptedAs": {
+        "postFx": "js/tiltshift.js (blur band + grade + vignette, canvas 2D, dependency-free)",
+        "bandFollows": "map focus in plan mode, the player in walk mode",
+        "rushHour": "js/clock.js rushLevel() — IST commute curve drives fleet size, speed and horns (agents.js)",
+        "timelapse": "plan mode + lens on = wind-up-toy stepped motion; walk mode stays real time",
+        "nativeMoves": [
+          "long-exposure headlight trails (night)",
+          "cloud shadows sweeping (day)"
+        ],
+        "toggle": "cam-rail aperture button or key T, persisted in localStorage"
+      },
+      "source": "https://github.com/lemomo-ai/lemo-opuscar — styles/tilt-shift (grammar adapted; no code or assets copied)"
+    }
+  ],
   "howToExtend": {
     "addBuilding": "js/data.js BUILDINGS + one draw case in js/arts.js",
     "addResident": "js/owners.js RESIDENTS (max 4, keep the [NPC] tag)",
     "assignDeed": "js/owners.js ASSIGNMENTS (tiles as \"x,y\")",
     "pinKnob": "place(x, y, key, { knobs: { <knob>: <option> } }) — see KNOBS in js/data.js",
+    "addFilmStyle": "js/tiltshift.js post pass + a filmStyles entry here",
     "regenerate": "node scripts/catalog.mjs"
   }
 }

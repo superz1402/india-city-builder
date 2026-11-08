@@ -9,7 +9,8 @@ import { celebrate, celebrateCost, activeFestival } from './events.js';
 import { saveGame, hasSave } from './save.js';
 import { sfx, setEnabled, isEnabled } from './audio.js';
 import { seasonOf } from './sim.js';
-import { istLabel } from './clock.js';
+import { istLabel, rushLevel } from './clock.js';
+import { isLensOn, setLensOn } from './tiltshift.js';
 import { centerOn, setZoom, orbitBy } from './iso.js';
 import { walkActive, enterWalk, exitWalk, doEmote, setJoystick, setRun, nearbyCount, getPlayer, teleportTo } from './walk.js';
 import { RESIDENTS, residentList, ownersAt, assignDeed, vacateDeed, homeOf, shopOf, statusOf, deedFor } from './owners.js';
@@ -170,6 +171,18 @@ export function tick() {
     if (chip.textContent !== txt) chip.textContent = txt;
     // nearest deed chip (reference walkNear: whose home am I passing?)
     updateWalkNear();
+  }
+
+  // rush-hour whispers (Toy Town Rush Hour): announce the tide, once each way
+  if (S.grid.length) {
+    const rl = rushLevel();
+    if (rl >= 1.35 && !tick.rushOn) {
+      tick.rushOn = true;
+      pushNotice('Rush hour — the Mahanagar’s roads pack up. Horns optional, patience mandatory.', 'info');
+    } else if (rl < 1.12 && tick.rushOn) {
+      tick.rushOn = false;
+      pushNotice('Rush hour is over — the streets breathe again.', 'info');
+    }
   }
 
   // festival banner
@@ -487,6 +500,22 @@ function initWalkControls() {
   $('btn-rot-r').addEventListener('click', () => { orbitBy(Math.PI / 4); sfx.click(); });
 }
 
+// ---------- tilt-shift miniature lens ----------
+function toggleLens() {
+  const on = setLensOn(!isLensOn());
+  syncLensBtn();
+  sfx.click();
+  pushNotice(on
+    ? 'Tilt-Shift Miniature lens ON — your city is a toy model now. (Press T to toggle)'
+    : 'Lens off — back to the plain working map.', 'info');
+}
+function syncLensBtn() {
+  const b = $('btn-lens');
+  if (!b) return;
+  b.classList.toggle('on', isLensOn());
+  b.setAttribute('aria-pressed', String(isLensOn()));
+}
+
 // ---------- panels ----------
 const PANELS = ['menu-panel', 'stats-panel', 'help-panel', 'confirm-panel', 'deeds-panel', 'assign-panel'];
 
@@ -559,7 +588,13 @@ export function initUi() {
   initWalkControls();
   initSearch();
 
+  syncLensBtn();
+  $('btn-lens').addEventListener('click', toggleLens);
+
   document.addEventListener('keydown', (e) => {
+    // typing in the search box must never trigger game shortcuts
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.code === 'KeyT' && !anyPanelOpen()) { e.preventDefault(); toggleLens(); }
     if (e.code === 'Space' && !anyPanelOpen()) { e.preventDefault(); $('btn-speed').click(); }
     if (e.code === 'Escape') {
       if (anyPanelOpen()) closePanels();

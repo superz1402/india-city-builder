@@ -30,6 +30,15 @@ Standard Time clock**.
   nearby", just like the reference.
 - **Real IST day–night (v2)** — the sky, lamps and citizen schedules follow the
   actual clock in India (UTC+5:30). 8 pm IST looks like 8 pm IST.
+- **Tilt-Shift Miniature lens (v4)** — the city is filmed like a toy model:
+  a sharp band where you're looking, the world melting into model-blur above
+  and below, saturated paint-box colours, long-exposure headlight trails at
+  night, cloud shadows sweeping by day. **Toy Town Rush Hour**: the traffic
+  fleet follows India's real commute clock — near-empty streets at 6 am,
+  gridlock-ish peaks 8–11 am and 5–8:30 pm IST with two-tone horns. Plan mode
+  runs at time-lapse speed with wind-up-toy steps; walk mode is always real
+  time. Toggle with the aperture button or `T` (adapted, dependency-free,
+  from [lemomo-ai's tilt-shift film style](https://github.com/lemomo-ai/lemo-opuscar)).
 - **Metaverse ownership (v2)** — every home and shop can have a deed. Assign
   owners in game (tap building → Assign owner) or in code (`js/owners.js`).
   Residents live by their deeds: home at night, shop by day, evening strolls.

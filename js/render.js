@@ -11,15 +11,17 @@ import { deeds } from './owners.js';
 import { isNight, hourOfDay, seasonOf } from './sim.js';
 import { getAgents } from './agents.js';
 import { getPlayer, getWalkers, walkActive } from './walk.js';
+import { lensBegin, lensCompose, setLensBand, isLensOn } from './tiltshift.js';
 
 let ctx = null, canvas = null, W = 0, H = 0, dpr = 1;
+let vctx = null; // the visible canvas context (when the lens is off, this IS ctx)
 let ghost = null; // {key, x, y, ok}
 export function setGhost(g) { ghost = g; }
 
 const fxCtx = { particles: [], splashes: [] };
 
 export function initRender(c) {
-  canvas = c; ctx = c.getContext('2d');
+  canvas = c; ctx = c.getContext('2d'); vctx = ctx;
   resize();
   window.addEventListener('resize', resize);
 }
@@ -55,6 +57,10 @@ export function render(now) {
   const festival = S.festival ? S.festival.id : null;
   beginFrame();
 
+  // ---- tilt-shift miniature lens: when on, the world draws offscreen and
+  // lensCompose() lays the band blur + grade + vignette over the visible canvas
+  ctx = lensBegin(W, H, dpr) || vctx;
+
   // ---- sky (real IST hour drives it) ----
   const [r, g, b] = skyColors(hour);
   const grd = ctx.createLinearGradient(0, 0, 0, H);
@@ -87,6 +93,19 @@ export function render(now) {
   }
   const walking = walkActive();
   const pl = walking ? getPlayer() : null;
+
+  // ---- lens: aim the sharp strip at the subject ("band follows one subject")
+  // plan mode keeps it on the map focus; walk mode tracks YOU
+  if (isLensOn()) {
+    let fy = cam.py, fw = 0.16;
+    if (walking && pl) {
+      const pi = isoOf(pl.x, pl.y);
+      const pp = worldToScreen(pi.x, pi.y + TH / 2);
+      fy = Math.max(0.3, Math.min(0.72, pp.y / H));
+      fw = 0.13;
+    }
+    setLensBand(fy, fw, Math.sin(cam.rot) * 0.05);
+  }
 
   // ---- terrain pass + collect depth-sorted drawables ----
   // v2 sort key: screen y after camera yaw — correct painter order at any orbit.
@@ -130,9 +149,15 @@ export function render(now) {
   }
 
   // ---- ambient agents (people, vehicles, cows) ----
+  // time-lapse rhythm (lens on, plan mode): agents step in 0.16-tile quantised
+  // hops — wind-up toys on a model railway. Walk mode stays real time; cows
+  // are above the law in both.
+  const tlStep = isLensOn() && !walking ? 0.16 : 0;
   const agents = getAgents();
   for (const a of agents) {
-    const i = isoOf(a.x, a.y);
+    const ax = tlStep && a.kind !== 'cow' ? Math.round(a.x / tlStep) * tlStep : a.x;
+    const ay = tlStep && a.kind !== 'cow' ? Math.round(a.y / tlStep) * tlStep : a.y;
+    const i = isoOf(ax, ay);
     const p = worldToScreen(i.x, i.y + TH / 2);
     if (p.x < -60 || p.x > W + 60 || p.y < -80 || p.y > H + 80) continue;
     drawables.push({ sy: p.y + 0.5, agent: a, sx: p.x, sy2: p.y });
@@ -243,6 +268,30 @@ export function render(now) {
       ctx.fillStyle = rg;
       ctx.beginPath(); ctx.arc(l.x, l.y, l.r * Math.max(0.7, cam.z * 0.8), 0, 7); ctx.fill();
     }
+    // long-exposure headlight trails (lens native move, STYLE.md §8): at
+    // night every vehicle drags a fading warm streak down its lane. Trails
+    // stay smooth while the cars themselves time-lapse — exactly the
+    // reference film's dawn opening.
+    if (isLensOn()) {
+      const rc = Math.cos(cam.rot), rs = Math.sin(cam.rot);
+      let trails = 0;
+      for (const a of agents) {
+        if (a.kind !== 'vehicle' || trails > 42) continue;
+        const i = isoOf(a.x, a.y);
+        const p = worldToScreen(i.x, i.y + TH / 2);
+        if (p.x < -90 || p.x > W + 90 || p.y < -70 || p.y > H + 70) continue;
+        const L = 26 * cam.z * (a.dir || 1);
+        const tx = p.x - L * rc, ty = p.y - L * rs;
+        const tg = ctx.createLinearGradient(p.x, p.y, tx, ty);
+        tg.addColorStop(0, 'rgba(255,226,150,.4)');
+        tg.addColorStop(1, 'rgba(255,226,150,0)');
+        ctx.strokeStyle = tg;
+        ctx.lineWidth = Math.max(1.5, 2.6 * cam.z);
+        ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(p.x, p.y - 3 * cam.z); ctx.lineTo(tx, ty - 3 * cam.z); ctx.stroke();
+        trails++;
+      }
+    }
     ctx.globalCompositeOperation = 'source-over';
   }
 
@@ -253,6 +302,9 @@ export function render(now) {
   if (season === 'monsoon') rain(t);
   if (season === 'winter') fog();
   if (season === 'summer') { ctx.fillStyle = 'rgba(255,150,40,.05)'; ctx.fillRect(0, 0, W, H); }
+
+  // ---- cloud shadows sweeping the model (lens native move, day only) ----
+  if (isLensOn() && !walking && !night && season !== 'monsoon') cloudShadows(t);
 
   // ---- build ghost (plan mode only) ----
   if (ghost && ghost.x != null) {
@@ -273,6 +325,10 @@ export function render(now) {
     }
     ctx.globalAlpha = 1;
   }
+
+  // ---- tilt-shift compose: band blur + grade + vignette onto the screen ----
+  // (last, so the build ghost lands inside the frame and gets graded too)
+  lensCompose(vctx, { night });
 }
 
 function diamond(cx, cy) {
@@ -468,6 +524,22 @@ function fog() {
   g.addColorStop(0, 'rgba(235,238,240,0)');
   g.addColorStop(1, 'rgba(235,238,240,.34)');
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+}
+
+// soft cloud shadows drifting across the miniature (STYLE.md "cloud shadows
+// sweeping" native move) — three fat radial blobs on slow orbits
+function cloudShadows(t) {
+  for (let i = 0; i < 3; i++) {
+    const x = ((t * 14 + i * 620) % (W + 700)) - 350;
+    const y = H * (0.18 + 0.3 * i) + Math.sin(t * 0.07 + i * 2.1) * 46;
+    const r = H * (0.3 + 0.08 * i);
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, 'rgba(14,24,52,.09)');
+    g.addColorStop(0.7, 'rgba(14,24,52,.05)');
+    g.addColorStop(1, 'rgba(14,24,52,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(x - r, y - r, r * 2, r * 2);
+  }
 }
 
 // ---------- build-menu thumbnails ----------

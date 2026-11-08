@@ -370,3 +370,85 @@ ui uxx."
 - AGENTS.md §11 added (Mahanagar operating rules); README hero + feature list
   rewritten for v3. Pushed; issue #20 closed with evidence; stale v2 issues
   #14/#15/#16 closed with evidence (features shipped in v2.0, verified live).
+
+## 2026-11-09 — v4.0 "Tilt-Shift Miniature" lens + Toy Town Rush Hour (issue #21, adapted from lemo-opuscar)
+
+Owner directive: "Tilt-Shift Miniature / Toy Town Rush Hour
+https://github.com/lemomo-ai/lemo-opuscar". Shallow-cloned that repo (read-only,
+/tmp), studied `styles/tilt-shift/` end to end — STYLE.md (blur band, grade,
+camera grammar, native moves, pitfalls), style.json (style #42, film "Toy Town
+Rush Hour") and demo/post.js (three.js CoC+gather+grade shader passes) — then
+re-implemented the GRAMMAR dependency-free on canvas 2D. No code or assets
+copied; grammar only, same discipline as the polyfork round.
+
+**Shipped**
+- `js/tiltshift.js` (NEW) — the lens. Pipeline: world renders offscreen
+  (dpr capped 1.75) → sharp blit with `saturate/contrast` grade (sat 1.36 day /
+  1.14 night, per STYLE.md §2 "lower saturation at night"; graceful fallback
+  where ctx.filter is missing) → light blur layer (½-res round trip) masked by
+  a tilted gradient band → heavy blur layer (⅛→⅓→full hops) masked by a wider
+  band → warm 'overlay' highlights (day) → elliptical vignette (x ×1.25, like
+  the reference shader). Masks are `destination-in` gradients on a rotated
+  axis, so the strip can lean; blur = downscale/upscale round trips, works in
+  every browser, zero dependencies.
+- Band follows the subject ("band follows one subject"): map focus in plan
+  mode (y = cam.py, w 0.16), the PLAYER in walk mode (clamped 0.30–0.72, w
+  0.13); tilt = sin(cam.rot)·0.05 so orbiting breathes.
+- `js/render.js` — offscreen routing (`ctx = lensBegin() || vctx`), band
+  aiming, time-lapse agent quantisation (0.16-tile steps, plan+lens only, cows
+  exempt — above the law), long-exposure headlight trails at night (warm
+  gradient streaks along cam-rotated lane axes, capped 42, 'lighter'), cloud
+  shadows sweeping by day (3 drifting radial blobs, lens+plan+non-monsoon),
+  compose runs LAST so the build ghost is graded too.
+- `js/clock.js` — `rushLevel()` (0.25 sleeping → 0.5 midday/breathing → 2.1
+  peak; morning tri 7.2–9.4–11.6, evening tri 16.4–18.6–21.0, ×0.5 late night)
+  and `commuteLevel()` — all read off the REAL IST clock.
+- `js/agents.js` — Toy Town Rush Hour: vehicle fleet = base(≤26) × rush, clamp
+  3…56 (≈7 at 3 am, 13 at dawn/midday, 55 at peak); fast-fill spawn when the
+  gap >10, fast retire when >12; vehicles drive ×(1+0.35·(rush−1)); people
+  swell ×(1+0.35·commute); tuned two-tone horns (`sfx.horn`, low-passed square
+  pair) at rush >1.4, rate-limited.
+- Time-lapse: plan+lens agents move ×2.2 in quantised wind-up-toy steps; walk
+  mode stays REAL time — the film's ×40→×1 speed drop is literally "press
+  Walk".
+- `js/ui.js` — aperture toggle (`btn-lens`, aria-pressed, marigold .on state),
+  key `T` shortcut, persisted (`apna-shehar-lens-v1`, default ON), rush-hour
+  whisper notices (once each way), and a fix: game shortcuts no longer fire
+  while typing in the search box (INPUT/TEXTAREA guard — pre-existing Space bug).
+- `index.html` — `#i-lens` aperture SVG symbol + cam-rail button + help-panel
+  "The toy lens" paragraph. `css/style.css` — `#btn-lens.on` gradient state.
+- `catalog.json` v4 + `scripts/catalog.mjs` — new `filmStyles[]` section
+  (lemo-opuscar style.json schema: slug/film/line/uses + adaptedAs map + source
+  attribution); `llms.txt` gains the v4 schema line + a lens section; README
+  feature bullet.
+- Superseded a concurrent session's partial duplicate: an unused `js/fx.js`
+  (+ a dangling import in render.js) appeared in the working tree mid-task
+  from another agent loop working the same directive; it was unreferenced
+  (zero call sites), so the import was dropped and the orphan removed in
+  favour of the shipped, fully-wired `js/tiltshift.js`. Canonical = tiltshift.
+
+**QA (agent-browser, headless Chromium; 1280×800 + 390×844)**
+- `node --input-type=module --check` every js module OK; `node
+  scripts/test-city.mjs` ALL GREEN (deed-tile sync, connectivity, economy).
+- rushLevel unit-probed across the day: 3 am → 0.25 (fleet 7), 6 am → 0.50
+  (13), 9.4 am → 2.10 (55), 1 pm → 0.50, 6:36 pm → 2.10.
+- Boot → welcome → Enter: zero console/page errors. qa-7 night plan (3:21 am
+  IST: band sharp through the CBD, edges melted, lamps glowing, saturated
+  grade, vignette) → docs/qa-7.
+- Full-map money shot at min zoom: whole Mahanagar reads as a toy model —
+  docs/qa-8. Toggle off: uniformly sharp, muted, button state + notice correct,
+  localStorage '0' — docs/qa-9; toggle on again persisted '1'.
+- Walk mode at street level: band tracks the player, TO-LET boards blur with
+  distance from the strip, ACQUIRED/[NPC] plates + name tags stay readable in
+  band, warm headlight trails streak the night avenues — docs/qa-10. Near-chip
+  "[NPC] Arjun's shop · Dhaba" intact; sim ticked to Day 2, Happy 100%,
+  treasury compounding (₹45k → ₹1.52L across the session).
+- Mobile 390×844: lens live, aperture button in the rail, dock/HUD intact —
+  docs/qa-11.
+- FPS probe lens OFF vs ON: identical (13 fps in software-rendered SwiftShader
+  headless — base tile draw is the bottleneck there, the lens adds no
+  measurable cost; on real GPUs the pipeline is ~6 full-screen blits).
+
+**Ops**
+- Pushed to origin/main, verified via ls-remote; issue #21 closed with
+  evidence. catalog v4 regenerated (`node scripts/catalog.mjs`).

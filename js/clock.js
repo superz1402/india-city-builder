@@ -49,3 +49,26 @@ export function dayPhase() {
   if (h < 19.5) return 'evening';
   return 'night';
 }
+
+// ---- Toy Town Rush Hour (adapted from lemo-opuscar styles/tilt-shift) ----
+// India's real commute rhythm, read off the IST clock: the roads wake into a
+// morning peak around 8–11, breathe at midday, pack up again 5–8:30 pm, and
+// thin right out late at night ("Six a.m. One car. One note.").
+function tri(x, a, p, b) {
+  if (x <= a || x >= b) return 0;
+  return x < p ? (x - a) / (p - a) : (b - x) / (b - p);
+}
+
+// Traffic density multiplier, ~0.25 (sleeping streets) to ~2.1 (gridlock-ish).
+export function rushLevel(h = hourOfDay()) {
+  const m = tri(h, 7.2, 9.4, 11.6);    // morning peak
+  const e = tri(h, 16.4, 18.6, 21.0);  // evening peak
+  let r = 0.5 + m * 1.6 + e * 1.6;     // midday breathes at ~0.5, peaks at 2.1
+  if (h >= 23 || h < 5.5) r *= 0.5;    // late night: the Mahanagar sleeps
+  return Math.min(2.1, r);
+}
+
+// Pedestrian commute swell, 0..1 (people flood the streets at the same hours).
+export function commuteLevel(h = hourOfDay()) {
+  return Math.max(tri(h, 7.2, 9.4, 11.6), tri(h, 16.4, 18.6, 21.0));
+}

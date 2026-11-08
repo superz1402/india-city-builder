@@ -4,11 +4,14 @@
 //
 //   node scripts/catalog.mjs            # writes catalog.json at repo root
 //
-// v3 (this version) adopts the polyfork catalog SCHEMA itself:
+// v3 adopts the polyfork catalog SCHEMA itself:
 //   site / licence / api / counts / kits[] / assets[]
 // Each asset carries its stats, art refs and PARAMETRIC KNOBS — the
 // polyfork "a model is a program" idea adapted to procedural canvas.
 // The old `buildings` key is renamed `assets` (single source, no dupes).
+// v4 adds `filmStyles[]` (adapted from lemo-opuscar style.json): film-style
+// lenses the renderer implements as post-processing, so owners can see what
+// look the city ships with and where the grammar came from.
 
 import { writeFileSync } from 'node:fs';
 
@@ -76,16 +79,35 @@ const residents = owners.residentList().map((r) => ({
   deedSource: r.fromCode ? 'code' : 'in-game',
 }));
 
+// Film-style lenses implemented in the renderer (schema mirrors
+// lemo-opuscar styles/*/style.json: slug / en / film / line / uses).
+const filmStyles = [{
+  slug: 'tilt-shift',
+  name: 'Tilt-Shift Miniature',
+  film: 'Toy Town Rush Hour',
+  line: 'Morning rush hour in a town that looks like a model: traffic, trains and tiny people.',
+  uses: ['City promos', 'Real estate', 'Transport'],
+  adaptedAs: {
+    postFx: 'js/tiltshift.js (blur band + grade + vignette, canvas 2D, dependency-free)',
+    bandFollows: 'map focus in plan mode, the player in walk mode',
+    rushHour: 'js/clock.js rushLevel() — IST commute curve drives fleet size, speed and horns (agents.js)',
+    timelapse: 'plan mode + lens on = wind-up-toy stepped motion; walk mode stays real time',
+    nativeMoves: ['long-exposure headlight trails (night)', 'cloud shadows sweeping (day)'],
+    toggle: 'cam-rail aperture button or key T, persisted in localStorage',
+  },
+  source: 'https://github.com/lemomo-ai/lemo-opuscar — styles/tilt-shift (grammar adapted; no code or assets copied)',
+}];
+
 const catalog = {
   site: SITE,
   licence: `${REPO}/blob/main/LICENSE`,
   api: `${SITE}llms.txt`,
   repo: REPO,
   game: 'Apna Shehar — India City Builder',
-  version: 3,
-  generator: 'scripts/catalog.mjs (schema adapted from lucas-martinic/polyfork-catalog)',
+  version: 4,
+  generator: 'scripts/catalog.mjs (schema adapted from lucas-martinic/polyfork-catalog; filmStyles from lemo-opuscar)',
   generatedAt: new Date().toISOString(),
-  clock: 'Asia/Kolkata (UTC+05:30) — real time drives day/night',
+  clock: 'Asia/Kolkata (UTC+05:30) — real time drives day/night and rush-hour traffic',
   counts: {
     assets: assets.length,
     kits: kits.length,
@@ -94,6 +116,7 @@ const catalog = {
     categories: CATS.length,
     festivals: FESTIVALS.length,
     tiers: TIERS.length,
+    filmStyles: filmStyles.length,
   },
   kits,
   assets,
@@ -103,11 +126,13 @@ const catalog = {
   seasons: SEASONS,
   festivals: FESTIVALS.map((f) => ({ id: f.id, name: f.name, text: f.text })),
   outfitFamilies: OUTFITS.map((o) => ({ type: o.type, colors: o.colors.length })),
+  filmStyles,
   howToExtend: {
     addBuilding: 'js/data.js BUILDINGS + one draw case in js/arts.js',
     addResident: 'js/owners.js RESIDENTS (max 4, keep the [NPC] tag)',
     assignDeed: 'js/owners.js ASSIGNMENTS (tiles as "x,y")',
     pinKnob: 'place(x, y, key, { knobs: { <knob>: <option> } }) — see KNOBS in js/data.js',
+    addFilmStyle: 'js/tiltshift.js post pass + a filmStyles entry here',
     regenerate: 'node scripts/catalog.mjs',
   },
 };
@@ -115,6 +140,7 @@ const catalog = {
 const out = new URL('../catalog.json', import.meta.url).pathname;
 writeFileSync(out, JSON.stringify(catalog, null, 2) + '\n');
 console.log(
-  `catalog.json (v3) written: ${catalog.counts.assets} assets in ${catalog.counts.kits} kits, ` +
-  `${catalog.counts.knobbed} with knobs, ${catalog.counts.residents} residents, ${catalog.counts.festivals} festivals`
+  `catalog.json (v4) written: ${catalog.counts.assets} assets in ${catalog.counts.kits} kits, ` +
+  `${catalog.counts.knobbed} with knobs, ${catalog.counts.residents} residents, ${catalog.counts.festivals} festivals, ` +
+  `${catalog.counts.filmStyles} film style`
 );
