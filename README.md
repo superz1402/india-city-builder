@@ -75,7 +75,7 @@ Standard Time clock**.
 | Zoom | scroll / +− buttons | pinch / +− buttons |
 | Build | click card → click map | tap card → tap map |
 | Inspect / owner / remove | click placed building | tap placed building |
-| **Walk** | Walk button → WASD/arrows, Shift run, drag look, 1-4 emotes | Walk button → joystick, RUN, emote buttons |
+| **Walk (true first person, v5.1)** | Walk button → you ARE the camera: WASD move, Q/E or ←/→ turn, Shift run, drag or click-to-lock look, 1-4 emotes, pocket map + compass | Walk button → joystick move, drag look, RUN + emote buttons, pocket map |
 | Visit a resident | search name or People & homes panel | same |
 | Pause / speed | Space or the HUD button | HUD button |
 
