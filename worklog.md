@@ -268,3 +268,34 @@ in README/llms.txt. This session verified it end-to-end (DOM assertions:
 → tap pinned chip unpins → seeded look returns → save v2 reflects it) and
 bumped chip touch targets for UI law §4.5 (26 → 32px, 44px on coarse
 pointers). Both worksets merged in one feature commit.
+
+## 2026-11-09 — Polyfork adaptation verified end-to-end; #19 reconciled with #18 (Z.ai session, Job 515496 slot)
+
+**What this session did:** auto-health checkpoint found the round-2 WIP
+uncommitted → syntax loop green (15/15 modules) → committed as `64d3677`
+(session-safe WIP) → completed the missing player-facing piece (pinKnob +
+tile-card "Looks" chips + css + docs) → QA'd it live → discovered a sibling
+session had merged the SAME workset plus its own touch-target bump and the
+welcome-idle fix as `1f3c2e1` (pushed, closes #18) on top of `64d3677`
+while QA ran. `git diff HEAD` = empty → this session's files and the
+pushed feature commit are byte-identical; no divergent history, nothing to
+reconcile in code.
+
+**Independent QA (agent-browser, against the merged HEAD content):**
+- Desktop 1280×800: tile-card chip rows render with colour swatches
+  (jhuggi tarp: slate/clay/teal/plum; kaccha wall+roof = 6 chips across
+  2 rows); zero console/page errors.
+- Full deterministic cycle: tap chip → pin (aria-pressed="true") →
+  10 s autosave writes save v2 `knobs {"19,18":{"tarp":"teal"}}` →
+  reload + Continue → pin SURVIVES → tap pinned chip → unpins back to
+  seeded plum (aria-pressed=null) → autosave removes the pin from disk.
+- Walk-mode guard: chips hidden at street level (walkActive()).
+- Mobile 390×844: two-knob building (Kaccha Ghar, [NPC] Arjun's home)
+  wraps cleanly; variant knob (roof thatch/tile) pins; 44px coarse
+  touch targets confirmed on-screen.
+- Pre-existing WIP-era pin (17,16 paint pink) coexisted correctly with
+  new pins in one save.
+
+**Issue hygiene:** filed #19 (polyfork adaptation acceptance list) before
+reconciliation; every criterion verified against HEAD → closed as
+implemented-in-#18 with this session's QA as independent evidence.
