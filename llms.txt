@@ -53,6 +53,12 @@ place(18, 18, 'pakka', { knobs: { paint: 'teal' } });
 Pins live on the grid cell, persist in save v2 (`knobs: {"x,y": {...}}`)
 and migrate cleanly: v1 saves load unchanged.
 
+**In-game the player pins the same way** (no code needed): in plan mode,
+tap a knobbed building — the tile card lists each knob as a row of chips
+("Looks"). Tap a chip to pin that option; tap the pinned chip again
+(outlined) to return to the seeded look. Pins go through
+`pinKnob(x, y, knob, option)` (`null` unpins) and autosave handles the rest.
+
 ## Extending the city (everything is code-side)
 
 1. **Building** — add one line to `BUILDINGS` in `js/data.js` + one draw

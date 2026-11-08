@@ -6,7 +6,7 @@
   "game": "Apna Shehar — India City Builder",
   "version": 3,
   "generator": "scripts/catalog.mjs (schema adapted from lucas-martinic/polyfork-catalog)",
-  "generatedAt": "2026-11-08T18:47:11.679Z",
+  "generatedAt": "2026-11-08T18:50:37.747Z",
   "clock": "Asia/Kolkata (UTC+05:30) — real time drives day/night",
   "counts": {
     "assets": 41,

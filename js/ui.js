@@ -1,9 +1,10 @@
 // ui.js — HUD, build menu, panels, notices, tile info, search, walk controls.
 // DOM layer only: game rules live in state/sim/owners; pixels in render/arts.
 
-import { S, pushNotice, recomputeStats, canPlace, place, removeAt, fmtMoney, clearUiDirty } from './state.js';
-import { BUILDINGS, CATS, TIERS } from './data.js';
+import { S, pushNotice, recomputeStats, canPlace, place, removeAt, pinKnob, fmtMoney, clearUiDirty } from './state.js';
+import { BUILDINGS, CATS, TIERS, KNOBS } from './data.js';
 import { drawThumb, setGhost } from './render.js';
+import { resolveKnobs } from './arts.js';
 import { celebrate, celebrateCost, activeFestival } from './events.js';
 import { saveGame, hasSave } from './save.js';
 import { sfx, setEnabled, isEnabled } from './audio.js';
@@ -261,6 +262,21 @@ function showTileInfo(x, y, screen) {
       if (d.power) lines.push(`${d.power > 0 ? '+' : ''}${d.power} power`);
       if (d.happy) lines.push(`+${d.happy} khush-hali nearby`);
       if (lines.length) html += `<span class="ti-line">${lines.join(' · ')}</span>`;
+      // parametric knobs (polyfork pattern: every look is an argument).
+      // Seeded pick shows as the default; tapping a chip pins it per tile
+      // (saved in v2); tapping the pinned chip again returns to the seed.
+      const kdefs = KNOBS[g.k];
+      if (kdefs && !walkActive()) {
+        const cur = resolveKnobs(g.k, g.seed || 0);
+        for (const [kn, kd] of Object.entries(kdefs)) {
+          const opts = kd.options || Object.keys(kd.colors || {});
+          const pinned = g.knobs && g.knobs[kn];
+          const val = pinned || cur[kn];
+          html += `<span class="ti-knob"><em>${kn}</em>${opts.map(op =>
+            `<button class="knob-chip${op === val ? ' on' : ''}" data-knob="${kn}" data-val="${op}" ${op === val && pinned ? 'aria-pressed="true" title="Pinned — tap to return to the seeded look"' : ''}>${kd.colors ? `<i class="sw" style="background:${kd.colors[op]}"></i>` : ''}${op}</button>`
+          ).join('')}</span>`;
+        }
+      }
       // ownership (metaverse deed book)
       const own = ownersAt(x, y);
       if (own.length) {
@@ -286,6 +302,12 @@ function showTileInfo(x, y, screen) {
   const bw = 260, bh = 200;
   box.style.left = Math.max(8, Math.min(window.innerWidth - bw, screen.cx - bw / 2)) + 'px';
   box.style.top = Math.max(60, Math.min(window.innerHeight - bh - 140, screen.cy - 130)) + 'px';
+  box.querySelectorAll('.knob-chip').forEach(ch => ch.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const r = pinKnob(x, y, ch.dataset.knob, ch.classList.contains('on') && ch.getAttribute('aria-pressed') === 'true' ? null : ch.dataset.val);
+    if (!r.ok) { pushNotice(r.why, 'bad'); return; }
+    sfx.click(); showTileInfo(x, y, screen); // re-render chips + keep panel open
+  }));
   const as = box.querySelector('#ti-assign');
   if (as) as.addEventListener('click', (e) => { e.stopPropagation(); openAssignPanel(x, y); });
   const rm = box.querySelector('#ti-remove');

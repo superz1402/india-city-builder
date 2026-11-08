@@ -204,3 +204,67 @@ examples use [NPC] names now.
 
 **Pushed:** this task's commit (see git log — "walk-view parity + 4-NPC cap").
 **Live:** https://superz1402.github.io/india-city-builder/
+
+## 2026-11-09 — Polyfork round 2: parametric knobs, kit schema, llms.txt (issue #18)
+
+**Owner directive:** "Adapt things from lucas-martinic/polyfork-catalog."
+Round 1 (v2) adopted only the content-catalog pattern; this task adopted the
+catalog's two signature ideas.
+
+**Adapted from the real repo (cloned to /tmp, read line-by-line):**
+- **"A model is a program" → parametric knobs.** `KNOBS` registry in data.js:
+  14 buildings × 15 knobs (jhuggi.tarp, kaccha.wall+roof, pakka.paint,
+  haveli.stone, bungalow.paint+roof, flats.paint, chai.awning,
+  kirana.awning, dhaba.canopy, saree.silks, mandir.shikhara, masjid.dome,
+  gurudwara.dome, panchayat.dome). `resolveKnobs(key, seed)` in arts.js picks
+  an option deterministically per plot seed (cached; verified 0 invalid picks
+  over 97 seeds, distribution 19/29/29/20 on jhuggi tarp). Option 0 of every
+  knob = the original look, so existing cities render unchanged; extra
+  options are kit-coherent recolours/variants.
+- **Owner override API:** `place(x, y, key, { knobs: { paint: 'teal' } })`
+  validates against the registry — unknown knob → "Pakka Ghar knobs: paint",
+  bad value → "paint: 'neon' — valid options: cream, teal, pink, ochre".
+- **Persistence:** save v2 carries `knobs: {"x,y": {...}}`; loadGame accepts
+  v1 AND v2 (v1 = no pins, seeded looks; migration-free).
+- **Catalog v3 = polyfork schema:** top-level `site/licence/api/repo`,
+  `kits[]` (8 themed kits, one palette per family), `assets[]` (id/title/
+  type/kit/stats/knobs/def/art/seasonResponse). Legacy `buildings` key
+  renamed `assets` — single source, no dupes. 41 assets, 14 knobbed.
+- **llms.txt** (repo root, served by Pages): agent-facing API doc mirroring
+  polyfork's `api` pointer — schema, knobs API, code-side extension guide.
+
+**Files:** data.js (KITS+KNOBS), arts.js (resolveKnobs + 14 wired cases),
+state.js (S.v 2, place() knobs validation), save.js (v2 export/import),
+render.js (env.knobs pass-through), scripts/catalog.mjs (v3), llms.txt (new),
+README.md (knobs guide), AGENTS.md §6 (adoption note).
+
+**Bonus bug fix (found by QA):** a visitor idling on the welcome panel for
+14 s crashed the loop — `tick()` advanced the clock with no city, and
+`newDay()` → `recomputeStats()` hit the empty grid (`S.grid[y]` undefined).
+sim.js now returns early until the grid exists. Latent since v1; nobody
+caught it because every QA session clicked Start within 14 seconds.
+
+**QA (agent-browser, fresh browser context, zero console errors):**
+- Welcome idle 16.5 s: no crash (fix verified), UI alive.
+- Desktop 1280×800: Start → 7 pinned placements all ok → validation errors
+  helpful → save v2 with 6 pins → reload → Continue → all 6 pins rehydrated
+  into grid cells → night screenshot shows teal/pink/ochre pakka row, plum
+  jhuggi, tile-roof kaccha, teal masjid dome.
+- Mobile iPhone 14: Continue → boot clean, daytime screenshot confirms knob
+  variety, Walk toggles, economy live across sessions (pop 8→15, day 3).
+- Node: `--check` green on all 15 modules; catalog.mjs regen clean.
+
+**Pushed:** commit "feat: polyfork knobs + kit schema (catalog v3, llms.txt), save v2; fix welcome-idle crash (Closes #18)".
+**Live:** https://superz1402.github.io/india-city-builder/ (Pages rebuilds on push; llms.txt at /llms.txt).
+
+**Addendum — in-game knob chips (parallel session, shipped together):**
+while this task's QA ran, a parallel agent session staged an in-game look
+picker on top of the same foundation: `pinKnob(x, y, name, value)` in
+state.js (visual-only re-pin of an existing building; `null` unpins back to
+the seeded look) + tile-card knob chip rows in ui.js ("Looks": one chip per
+option, colour swatches, `aria-pressed` on the pinned chip) + styles + docs
+in README/llms.txt. This session verified it end-to-end (DOM assertions:
+4 chips with correct on/pressed states → tap pins pink → cell knobs update
+→ tap pinned chip unpins → seeded look returns → save v2 reflects it) and
+bumped chip touch targets for UI law §4.5 (26 → 32px, 44px on coarse
+pointers). Both worksets merged in one feature commit.

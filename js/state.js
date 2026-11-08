@@ -162,6 +162,28 @@ export function removeAt(x, y) {
   return { ok: true, refund };
 }
 
+// Pin one knob on an existing building (polyfork-style in-game knob UI).
+// Visual only: no money, no stats. `value: null` unpins that knob so the
+// plot falls back to its seeded look. Pins persist via save v2.
+export function pinKnob(x, y, name, value) {
+  const g = S.grid[y] && S.grid[y][x];
+  if (!g) return { ok: false, why: 'Nothing here' };
+  const defs = KNOBS[g.k] || {};
+  const kd = defs[name];
+  if (!kd) {
+    const names = Object.keys(defs);
+    return { ok: false, why: names.length ? `${BUILDINGS[g.k].name} knobs: ${names.join(', ')}` : `${BUILDINGS[g.k].name} has no knobs` };
+  }
+  const valid = kd.options || Object.keys(kd.colors || {});
+  if (value === null) {
+    if (g.knobs) { delete g.knobs[name]; if (!Object.keys(g.knobs).length) delete g.knobs; }
+    return { ok: true };
+  }
+  if (!valid.includes(value)) return { ok: false, why: `${name}: '${value}' — valid options: ${valid.join(', ')}` };
+  g.knobs = { ...(g.knobs || {}), [name]: value };
+  return { ok: true };
+}
+
 // ---------- daily aggregates ----------
 export function recomputeStats(silent = false) {
   const st = {

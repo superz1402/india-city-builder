@@ -100,6 +100,8 @@ place(18, 18, 'pakka', { knobs: { paint: 'teal' } });
 ```
 
 The registry lives in `KNOBS` (`js/data.js`); pins persist in save v2.
+In-game, plan mode shows the same knobs as chip rows ("Looks") in the tile
+card — tap to pin, tap the pinned chip again to return to the seeded look.
 Full knob list per building: see `catalog.json` (assets[].knobs) or
 `llms.txt`.
 

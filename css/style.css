@@ -370,6 +370,22 @@ body.walking #search-wrap { display: none; }   /* the street has no search bar; 
 .ti-deed { margin-top: 4px; color: var(--accent-ink); font-weight: 600; }
 .ti-coord { display: block; margin-top: 6px; font-size: 10.5px; color: var(--ink-soft); opacity: .8; }
 
+/* tile info parametric knobs (polyfork-style look picker) */
+.ti-knob { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.ti-knob em { flex: 0 0 auto; font: 600 11px/1 system-ui, sans-serif; font-style: normal; color: var(--ink-soft); margin-right: 2px; }
+.knob-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  min-height: 32px; padding: 0 9px;
+  background: var(--bg); color: var(--ink);
+  border: 1px solid var(--chrome-edge); border-radius: 999px;
+  font: 600 11.5px/1 system-ui, sans-serif; cursor: pointer;
+}
+.knob-chip .sw { width: 10px; height: 10px; border-radius: 3px; border: 1px solid rgba(0,0,0,.25); display: inline-block; }
+.knob-chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.knob-chip.on[aria-pressed="true"] { outline: 2px solid var(--accent-ink); outline-offset: 1px; }
+@media (pointer: coarse) { .knob-chip { min-height: 44px; padding: 0 12px; } } /* UI law §4.5 touch targets */
+@media (prefers-color-scheme: dark) { .knob-chip.on { color: #241c12; } }
+
 /* ---------- walk HUD (street level) ---------- */
 #walk-hud { display: none; }
 body.walking #walk-hud { display: block; }
