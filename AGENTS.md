@@ -101,6 +101,13 @@ See the architecture tree in `README.md`. Conventions:
   (shot-by-shot video reverse engineering), `midrender/revideo`
   (videos with code). Not needed for v1; listed so future sessions know the
   intended toolkit.
+- `lucas-martinic/polyfork-catalog` (owner directive, v2): 2,700+ low-poly
+  three.js assets organised as themed kits with a generated `catalog.json`.
+  **Adopted:** the content-catalog pattern — `scripts/catalog.mjs` generates
+  `catalog.json` (buildings, residents, deeds, festivals, tiers) from the
+  code-side registries so tools/owners consume the city without parsing JS.
+  **Kit discipline:** new buildings/residents must stay coherent with the
+  existing palette/scale/seed-variant system (see data.js + arts.js).
 
 ## 7. Definition of done
 

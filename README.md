@@ -84,6 +84,12 @@ export const ASSIGNMENTS = [
 - In-game assignments (tap building → Assign owner) persist in the browser;
   this code file always wins for the same name.
 
+**3. Content catalog — `catalog.json`** (adapted from
+[lucas-martinic/polyfork-catalog](https://github.com/lucas-martinic/polyfork-catalog)):
+after editing the registries, run `node scripts/catalog.mjs` to regenerate the
+machine-readable index of every building, resident, deed, festival and tier.
+Tools, spreadsheets and future agents read the city from one JSON file.
+
 ## Run it yourself
 
 ```bash

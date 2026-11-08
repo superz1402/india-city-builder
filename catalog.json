@@ -1,0 +1,957 @@
+{
+  "game": "Apna Shehar — India City Builder",
+  "version": 2,
+  "generator": "scripts/catalog.mjs (adapted from lucas-martinic/polyfork-catalog)",
+  "generatedAt": "2026-11-08T18:02:44.443Z",
+  "clock": "Asia/Kolkata (UTC+05:30) — real time drives day/night",
+  "counts": {
+    "buildings": 41,
+    "residents": 14,
+    "categories": 8,
+    "festivals": 5,
+    "tiers": 5
+  },
+  "categories": [
+    {
+      "id": "house",
+      "name": "Homes"
+    },
+    {
+      "id": "farm",
+      "name": "Farms"
+    },
+    {
+      "id": "shop",
+      "name": "Bazaar"
+    },
+    {
+      "id": "civic",
+      "name": "Seva"
+    },
+    {
+      "id": "faith",
+      "name": "Faith"
+    },
+    {
+      "id": "fun",
+      "name": "Fun"
+    },
+    {
+      "id": "work",
+      "name": "Industry"
+    },
+    {
+      "id": "decor",
+      "name": "Roads"
+    }
+  ],
+  "buildings": [
+    {
+      "key": "jhuggi",
+      "name": "Jhuggi",
+      "category": "house",
+      "cost": 400,
+      "upkeep": 1,
+      "homes": 5,
+      "jobs": 0,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 0,
+      "happiness": 0,
+      "pollution": 0,
+      "unlockTier": 0,
+      "description": "A tarp-and-mud home. Humble, but home."
+    },
+    {
+      "key": "kaccha",
+      "name": "Kaccha Ghar",
+      "category": "house",
+      "cost": 1100,
+      "upkeep": 2,
+      "homes": 9,
+      "jobs": 0,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 0,
+      "happiness": 0,
+      "pollution": 0,
+      "unlockTier": 0,
+      "description": "Mud walls, thatch roof, cool in summer."
+    },
+    {
+      "key": "pakka",
+      "name": "Pakka Ghar",
+      "category": "house",
+      "cost": 3600,
+      "upkeep": 5,
+      "homes": 16,
+      "jobs": 0,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 0,
+      "happiness": 0,
+      "pollution": 0,
+      "unlockTier": 0,
+      "description": "Brick and cement with a rooftop tank."
+    },
+    {
+      "key": "haveli",
+      "name": "Haveli",
+      "category": "house",
+      "cost": 8500,
+      "upkeep": 10,
+      "homes": 18,
+      "jobs": 0,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 0,
+      "happiness": 2,
+      "pollution": 0,
+      "unlockTier": 2,
+      "description": "Carved jharokhas around a courtyard."
+    },
+    {
+      "key": "bungalow",
+      "name": "Bungalow",
+      "category": "house",
+      "cost": 7500,
+      "upkeep": 8,
+      "homes": 8,
+      "jobs": 0,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 0,
+      "happiness": 3,
+      "pollution": 0,
+      "unlockTier": 3,
+      "description": "A gated garden house for one lucky family."
+    },
+    {
+      "key": "flats",
+      "name": "Flat Block",
+      "category": "house",
+      "cost": 13000,
+      "upkeep": 18,
+      "homes": 44,
+      "jobs": 2,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 0,
+      "happiness": 0,
+      "pollution": 0,
+      "unlockTier": 3,
+      "description": "Four floors of city life and drying clothes."
+    },
+    {
+      "key": "wheat",
+      "name": "Wheat Field",
+      "category": "farm",
+      "cost": 900,
+      "upkeep": 3,
+      "homes": 0,
+      "jobs": 2,
+      "food": 34,
+      "water": 0,
+      "power": 0,
+      "income": 0,
+      "happiness": 0,
+      "pollution": 0,
+      "unlockTier": 0,
+      "description": "Golden in harvest season. Feeds the shehar."
+    },
+    {
+      "key": "paddy",
+      "name": "Rice Paddy",
+      "category": "farm",
+      "cost": 1200,
+      "upkeep": 3,
+      "homes": 0,
+      "jobs": 2,
+      "food": 28,
+      "water": 0,
+      "power": 0,
+      "income": 0,
+      "happiness": 0,
+      "pollution": 0,
+      "unlockTier": 0,
+      "description": "Loves the monsoon — food doubles when it rains."
+    },
+    {
+      "key": "dairy",
+      "name": "Dairy",
+      "category": "farm",
+      "cost": 2400,
+      "upkeep": 6,
+      "homes": 0,
+      "jobs": 2,
+      "food": 12,
+      "water": 0,
+      "power": 0,
+      "income": 30,
+      "happiness": 0,
+      "pollution": 0,
+      "unlockTier": 1,
+      "description": "Fresh doodh every morning."
+    },
+    {
+      "key": "mango",
+      "name": "Mango Orchard",
+      "category": "farm",
+      "cost": 1500,
+      "upkeep": 2,
+      "homes": 0,
+      "jobs": 1,
+      "food": 6,
+      "water": 0,
+      "power": 0,
+      "income": 20,
+      "happiness": 2,
+      "pollution": 0,
+      "unlockTier": 1,
+      "description": "Aam ka baagh. Shade and sweetness."
+    },
+    {
+      "key": "chai",
+      "name": "Chai Tapri",
+      "category": "shop",
+      "cost": 650,
+      "upkeep": 1,
+      "homes": 0,
+      "jobs": 1,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 20,
+      "happiness": 1,
+      "pollution": 0,
+      "unlockTier": 0,
+      "description": "Cutting chai, bun-maska, full Adda."
+    },
+    {
+      "key": "kirana",
+      "name": "Kirana Shop",
+      "category": "shop",
+      "cost": 2600,
+      "upkeep": 4,
+      "homes": 0,
+      "jobs": 2,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 55,
+      "happiness": 0,
+      "pollution": 0,
+      "unlockTier": 0,
+      "description": "Udhaar-khata open, biscuits stacked high."
+    },
+    {
+      "key": "dhaba",
+      "name": "Dhaba",
+      "category": "shop",
+      "cost": 4200,
+      "upkeep": 7,
+      "homes": 0,
+      "jobs": 3,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 95,
+      "happiness": 2,
+      "pollution": 0,
+      "unlockTier": 1,
+      "description": "Tandoori roti, charpais, truck-wala swag."
+    },
+    {
+      "key": "bazaar",
+      "name": "Bazaar",
+      "category": "shop",
+      "cost": 7000,
+      "upkeep": 12,
+      "homes": 0,
+      "jobs": 8,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 210,
+      "happiness": 2,
+      "pollution": 0,
+      "unlockTier": 1,
+      "description": "Canopy stalls selling everything, loudly."
+    },
+    {
+      "key": "saree",
+      "name": "Saree Shop",
+      "category": "shop",
+      "cost": 5500,
+      "upkeep": 5,
+      "homes": 0,
+      "jobs": 3,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 105,
+      "happiness": 0,
+      "pollution": 0,
+      "unlockTier": 2,
+      "description": "Kanjivaram to cotton, folded like rainbows."
+    },
+    {
+      "key": "jeweller",
+      "name": "Jewellery Shop",
+      "category": "shop",
+      "cost": 10000,
+      "upkeep": 8,
+      "homes": 0,
+      "jobs": 3,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 230,
+      "happiness": 0,
+      "pollution": 0,
+      "unlockTier": 3,
+      "description": "For weddings, festivals and safe keeping."
+    },
+    {
+      "key": "bank",
+      "name": "Bank",
+      "category": "shop",
+      "cost": 15000,
+      "upkeep": 14,
+      "homes": 0,
+      "jobs": 6,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 300,
+      "happiness": 0,
+      "pollution": 0,
+      "unlockTier": 3,
+      "description": "Loans, lockers, and a queue by 10 am."
+    },
+    {
+      "key": "cinema",
+      "name": "Cinema Hall",
+      "category": "shop",
+      "cost": 12000,
+      "upkeep": 12,
+      "homes": 0,
+      "jobs": 5,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 140,
+      "happiness": 5,
+      "pollution": 0,
+      "unlockTier": 2,
+      "description": "Hand-painted posters, interval samosa."
+    },
+    {
+      "key": "school",
+      "name": "School",
+      "category": "civic",
+      "cost": 6000,
+      "upkeep": 12,
+      "homes": 0,
+      "jobs": 6,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 0,
+      "happiness": 6,
+      "pollution": 0,
+      "unlockTier": 1,
+      "description": "Prayer assembly, chalk dust, bright futures."
+    },
+    {
+      "key": "hospital",
+      "name": "Hospital",
+      "category": "civic",
+      "cost": 12000,
+      "upkeep": 20,
+      "homes": 0,
+      "jobs": 8,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 0,
+      "happiness": 8,
+      "pollution": 0,
+      "unlockTier": 2,
+      "description": "Clean wards and a green ambulance."
+    },
+    {
+      "key": "panchayat",
+      "name": "Panchayat Bhavan",
+      "category": "civic",
+      "cost": 5000,
+      "upkeep": 8,
+      "homes": 0,
+      "jobs": 0,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 0,
+      "happiness": 4,
+      "pollution": 0,
+      "unlockTier": 1,
+      "description": "Where the shehar debates and decides."
+    },
+    {
+      "key": "police",
+      "name": "Police Chowki",
+      "category": "civic",
+      "cost": 4200,
+      "upkeep": 8,
+      "homes": 0,
+      "jobs": 3,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 0,
+      "happiness": 3,
+      "pollution": 0,
+      "unlockTier": 1,
+      "description": "Keeps the gully peace."
+    },
+    {
+      "key": "watertank",
+      "name": "Water Tank",
+      "category": "civic",
+      "cost": 3200,
+      "upkeep": 4,
+      "homes": 0,
+      "jobs": 0,
+      "food": 0,
+      "water": 70,
+      "power": 0,
+      "income": 0,
+      "happiness": 0,
+      "pollution": 0,
+      "unlockTier": 0,
+      "description": "Overhead tank + hand pumps below."
+    },
+    {
+      "key": "substation",
+      "name": "Substation",
+      "category": "civic",
+      "cost": 7000,
+      "upkeep": 6,
+      "homes": 0,
+      "jobs": 1,
+      "food": 0,
+      "water": 0,
+      "power": 90,
+      "income": 0,
+      "happiness": 0,
+      "pollution": 0,
+      "unlockTier": 0,
+      "description": "Transformer ki gun gun — steady bijli."
+    },
+    {
+      "key": "solar",
+      "name": "Solar Farm",
+      "category": "civic",
+      "cost": 9000,
+      "upkeep": 3,
+      "homes": 0,
+      "jobs": 0,
+      "food": 0,
+      "water": 0,
+      "power": 55,
+      "income": 0,
+      "happiness": 1,
+      "pollution": 0,
+      "unlockTier": 2,
+      "description": "Rooftop-of-the-city. Clean bijli."
+    },
+    {
+      "key": "busstand",
+      "name": "Bus Stand",
+      "category": "civic",
+      "cost": 6000,
+      "upkeep": 9,
+      "homes": 0,
+      "jobs": 4,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 0,
+      "happiness": 3,
+      "pollution": 0,
+      "unlockTier": 2,
+      "description": "Blue-red buses, conductor ki awaaz."
+    },
+    {
+      "key": "mandir",
+      "name": "Mandir",
+      "category": "faith",
+      "cost": 3000,
+      "upkeep": 3,
+      "homes": 0,
+      "jobs": 0,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 0,
+      "happiness": 7,
+      "pollution": 0,
+      "unlockTier": 0,
+      "description": "Bells at dawn, diyas at dusk."
+    },
+    {
+      "key": "masjid",
+      "name": "Masjid",
+      "category": "faith",
+      "cost": 3000,
+      "upkeep": 3,
+      "homes": 0,
+      "jobs": 0,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 0,
+      "happiness": 7,
+      "pollution": 0,
+      "unlockTier": 0,
+      "description": "The azaan and a cool green dome."
+    },
+    {
+      "key": "gurudwara",
+      "name": "Gurudwara",
+      "category": "faith",
+      "cost": 3200,
+      "upkeep": 3,
+      "homes": 0,
+      "jobs": 0,
+      "food": 8,
+      "water": 0,
+      "power": 0,
+      "income": 0,
+      "happiness": 7,
+      "pollution": 0,
+      "unlockTier": 0,
+      "description": "Langar for all — feeds the shehar daily."
+    },
+    {
+      "key": "church",
+      "name": "Church",
+      "category": "faith",
+      "cost": 3000,
+      "upkeep": 3,
+      "homes": 0,
+      "jobs": 0,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 0,
+      "happiness": 7,
+      "pollution": 0,
+      "unlockTier": 0,
+      "description": "Carols in December, quiet all year."
+    },
+    {
+      "key": "park",
+      "name": "Park",
+      "category": "fun",
+      "cost": 800,
+      "upkeep": 1,
+      "homes": 0,
+      "jobs": 0,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 0,
+      "happiness": 4,
+      "pollution": -1.5,
+      "unlockTier": 0,
+      "description": "Peepal tree, swings, morning walkers."
+    },
+    {
+      "key": "maidan",
+      "name": "Cricket Maidan",
+      "category": "fun",
+      "cost": 1400,
+      "upkeep": 2,
+      "homes": 0,
+      "jobs": 0,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 0,
+      "happiness": 5,
+      "pollution": 0,
+      "unlockTier": 0,
+      "description": "Gully cricket. Last man batting."
+    },
+    {
+      "key": "mela",
+      "name": "Mela Ground",
+      "category": "fun",
+      "cost": 8000,
+      "upkeep": 6,
+      "homes": 0,
+      "jobs": 0,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 0,
+      "happiness": 8,
+      "pollution": 0,
+      "unlockTier": 2,
+      "description": "Ferris wheel and jalebi smoke. Festivals shine here."
+    },
+    {
+      "key": "kiln",
+      "name": "Brick Kiln",
+      "category": "work",
+      "cost": 6000,
+      "upkeep": 6,
+      "homes": 0,
+      "jobs": 8,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 180,
+      "happiness": 0,
+      "pollution": 8,
+      "unlockTier": 2,
+      "description": "Chimney red at sunset. Keeps masons busy."
+    },
+    {
+      "key": "factory",
+      "name": "Small Factory",
+      "category": "work",
+      "cost": 9000,
+      "upkeep": 10,
+      "homes": 0,
+      "jobs": 12,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 290,
+      "happiness": 0,
+      "pollution": 6,
+      "unlockTier": 2,
+      "description": "Jobs galore — bring trees to balance."
+    },
+    {
+      "key": "textile",
+      "name": "Textile Mill",
+      "category": "work",
+      "cost": 15000,
+      "upkeep": 16,
+      "homes": 0,
+      "jobs": 22,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 520,
+      "happiness": 0,
+      "pollution": 10,
+      "unlockTier": 3,
+      "description": "Looms clack day and night."
+    },
+    {
+      "key": "road",
+      "name": "Road",
+      "category": "decor",
+      "cost": 60,
+      "upkeep": 0,
+      "homes": 0,
+      "jobs": 0,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 0,
+      "happiness": 0,
+      "pollution": 0,
+      "unlockTier": 0,
+      "description": "Autos, cows and cricket all share it."
+    },
+    {
+      "key": "bridge",
+      "name": "Bridge",
+      "category": "decor",
+      "cost": 350,
+      "upkeep": 0,
+      "homes": 0,
+      "jobs": 0,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 0,
+      "happiness": 0,
+      "pollution": 0,
+      "unlockTier": 0,
+      "description": "Crosses water. Also the best adda at sunset."
+    },
+    {
+      "key": "tree",
+      "name": "Neem Tree",
+      "category": "decor",
+      "cost": 80,
+      "upkeep": 0,
+      "homes": 0,
+      "jobs": 0,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 0,
+      "happiness": 1,
+      "pollution": -0.6,
+      "unlockTier": 0,
+      "description": "Shade, clean air, and evening charcha."
+    },
+    {
+      "key": "lamp",
+      "name": "Street Lamp",
+      "category": "decor",
+      "cost": 140,
+      "upkeep": 0,
+      "homes": 0,
+      "jobs": 0,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 0,
+      "happiness": 1,
+      "pollution": 0,
+      "unlockTier": 0,
+      "description": "Solar lamp — glows at night."
+    },
+    {
+      "key": "flag",
+      "name": "Flag Post",
+      "category": "decor",
+      "cost": 200,
+      "upkeep": 0,
+      "homes": 0,
+      "jobs": 0,
+      "food": 0,
+      "water": 0,
+      "power": 0,
+      "income": 0,
+      "happiness": 2,
+      "pollution": 0,
+      "unlockTier": 0,
+      "description": "Tiranga on top. Pride every day."
+    }
+  ],
+  "residents": [
+    {
+      "name": "Aarav Sharma",
+      "home": "17,18",
+      "shop": null,
+      "deedSource": "code"
+    },
+    {
+      "name": "Meera Sharma",
+      "home": "19,18",
+      "shop": null,
+      "deedSource": "code"
+    },
+    {
+      "name": "Chacha Ramu",
+      "home": "18,17",
+      "shop": null,
+      "deedSource": "code"
+    },
+    {
+      "name": "Priya Verma",
+      "home": null,
+      "shop": null,
+      "deedSource": "in-game"
+    },
+    {
+      "name": "Imran Qureshi",
+      "home": null,
+      "shop": null,
+      "deedSource": "in-game"
+    },
+    {
+      "name": "Simran Kaur",
+      "home": null,
+      "shop": null,
+      "deedSource": "in-game"
+    },
+    {
+      "name": "Joseph DSouza",
+      "home": null,
+      "shop": null,
+      "deedSource": "in-game"
+    },
+    {
+      "name": "Lakshmi Nair",
+      "home": null,
+      "shop": null,
+      "deedSource": "in-game"
+    },
+    {
+      "name": "Ravi Patel",
+      "home": null,
+      "shop": null,
+      "deedSource": "in-game"
+    },
+    {
+      "name": "Ananya Iyer",
+      "home": null,
+      "shop": null,
+      "deedSource": "in-game"
+    },
+    {
+      "name": "Vikram Singh",
+      "home": null,
+      "shop": null,
+      "deedSource": "in-game"
+    },
+    {
+      "name": "Fatima Sheikh",
+      "home": null,
+      "shop": null,
+      "deedSource": "in-game"
+    },
+    {
+      "name": "Deepak Yadav",
+      "home": null,
+      "shop": null,
+      "deedSource": "in-game"
+    },
+    {
+      "name": "Zoya Khan",
+      "home": null,
+      "shop": null,
+      "deedSource": "in-game"
+    }
+  ],
+  "deeds": [
+    {
+      "name": "Aarav Sharma",
+      "home": "17,18",
+      "fromCode": true
+    },
+    {
+      "name": "Meera Sharma",
+      "home": "19,18",
+      "fromCode": true
+    },
+    {
+      "name": "Chacha Ramu",
+      "home": "18,17",
+      "fromCode": true
+    }
+  ],
+  "tiers": [
+    {
+      "pop": 0,
+      "name": "Chhota Gaon",
+      "hin": "छोटा गाँव"
+    },
+    {
+      "pop": 120,
+      "name": "Kasba",
+      "hin": "कस्बा"
+    },
+    {
+      "pop": 350,
+      "name": "Town",
+      "hin": "टाउन"
+    },
+    {
+      "pop": 800,
+      "name": "Shahar",
+      "hin": "शहर"
+    },
+    {
+      "pop": 1500,
+      "name": "Mahanagar",
+      "hin": "महानगर"
+    }
+  ],
+  "seasons": [
+    {
+      "id": "summer",
+      "name": "Summer"
+    },
+    {
+      "id": "monsoon",
+      "name": "Monsoon"
+    },
+    {
+      "id": "winter",
+      "name": "Winter"
+    },
+    {
+      "id": "harvest",
+      "name": "Harvest"
+    }
+  ],
+  "festivals": [
+    {
+      "id": "diwali",
+      "name": "Diwali",
+      "text": "Diwali! The shehar glows with diyas."
+    },
+    {
+      "id": "eid",
+      "name": "Eid",
+      "text": "Eid Mubarak! Lanterns swing over the lanes."
+    },
+    {
+      "id": "holi",
+      "name": "Holi",
+      "text": "Holi hai! Colours fly across the maidan."
+    },
+    {
+      "id": "republic",
+      "name": "Republic Day",
+      "text": "Republic Day! Tirangas line the main road."
+    },
+    {
+      "id": "baisakhi",
+      "name": "Baisakhi",
+      "text": "Baisakhi harvest! Farm income doubles today."
+    }
+  ],
+  "outfitFamilies": [
+    {
+      "type": "saree",
+      "colors": 5
+    },
+    {
+      "type": "kurta",
+      "colors": 4
+    },
+    {
+      "type": "salwar",
+      "colors": 4
+    },
+    {
+      "type": "dhoti",
+      "colors": 2
+    },
+    {
+      "type": "lungi",
+      "colors": 2
+    },
+    {
+      "type": "turban",
+      "colors": 4
+    },
+    {
+      "type": "school",
+      "colors": 3
+    }
+  ],
+  "howToExtend": {
+    "addBuilding": "js/data.js BUILDINGS + one draw case in js/arts.js",
+    "addResident": "js/owners.js RESIDENTS",
+    "assignDeed": "js/owners.js ASSIGNMENTS (tiles as \"x,y\")"
+  }
+}
