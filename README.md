@@ -87,11 +87,29 @@ export const ASSIGNMENTS = [
 - In-game assignments (tap building → Assign owner) persist in the browser;
   this code file always wins for the same name.
 
-**3. Content catalog — `catalog.json`** (adapted from
+**3. Parametric knobs — pin a look per tile (adapted from
+[lucas-martinic/polyfork-catalog](https://github.com/lucas-martinic/polyfork-catalog))**
+
+Knobbed buildings (14 of them — tarp, wall, roof, paint, stone, awning,
+canopy, silks, shikhara, dome) resolve their look deterministically from the
+plot seed, so streets show stable per-plot variety. Option 0 of every knob
+is the original look. To pin one code-side:
+
+```js
+place(18, 18, 'pakka', { knobs: { paint: 'teal' } });
+```
+
+The registry lives in `KNOBS` (`js/data.js`); pins persist in save v2.
+Full knob list per building: see `catalog.json` (assets[].knobs) or
+`llms.txt`.
+
+**4. Content catalog — `catalog.json`** (schema adapted from
 [lucas-martinic/polyfork-catalog](https://github.com/lucas-martinic/polyfork-catalog)):
 after editing the registries, run `node scripts/catalog.mjs` to regenerate the
-machine-readable index of every building, resident, deed, festival and tier.
-Tools, spreadsheets and future agents read the city from one JSON file.
+machine-readable index of every asset (v3: polyfork-aligned
+`kits[]`/`assets[]` schema with per-asset knobs), resident, deed, festival
+and tier. Tools, spreadsheets and future agents read the city from one JSON
+file — `llms.txt` is the agent-facing API doc.
 
 ## Run it yourself
 

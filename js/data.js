@@ -75,6 +75,47 @@ export const BUILDINGS = {
   flag:  { name: 'Flag Post',   cat: 'decor', cost: 200, happy: 2, cover: 5, tier: 0, draw: 'flag', desc: 'Tiranga on top. Pride every day.' },
 };
 
+// ---- Kits & knobs (adapted from lucas-martinic/polyfork-catalog) ----
+// KITS: themed families — one palette, one scale, everything in a kit
+// belongs to the same world. Each kit maps 1:1 to a building category.
+export const KITS = [
+  { id: 'mohalla-homes', name: 'Mohalla Homes',  cat: 'house', desc: 'Jhuggi tarp to haveli jharokhas — the gully where everyone lives.' },
+  { id: 'kheti-baadi',   name: 'Kheti-Baadi',    cat: 'farm',  desc: 'Fields, paddies and orchards that feed the shehar.' },
+  { id: 'bazaar-line',   name: 'Bazaar Line',    cat: 'shop',  desc: 'Chai tapri to bank — commerce, loudly.' },
+  { id: 'seva-sadan',    name: 'Seva Sadan',     cat: 'civic', desc: 'Public seva — school, hospital, bijli, paani.' },
+  { id: 'bhakti-sthal',  name: 'Bhakti Sthal',   cat: 'faith', desc: 'Mandir, masjid, gurudwara, church — side by side, always.' },
+  { id: 'maidan-jashn',  name: 'Maidan & Jashn', cat: 'fun',   desc: 'Parks, cricket and the mela that lights up festivals.' },
+  { id: 'loom-mill',     name: 'Loom & Mill',    cat: 'work',  desc: 'Kilns, factories and mills — jobs, with smoke.' },
+  { id: 'gully-sajja',   name: 'Gully Sajja',    cat: 'decor', desc: 'Roads, trees, lamps — the trim that makes lanes lived-in.' },
+];
+
+// KNOBS: parametric per-asset options (polyfork's "a model is a program",
+// adapted to procedural canvas). Option 0 of every knob is the ORIGINAL
+// look, so old cities render exactly as before; other options are
+// kit-coherent recolours or variant switches.
+//  - knob with `colors`: option name -> hex colourway (per-plot pick).
+//  - knob with `options`: variant switch, interpreted in the arts.js case.
+// Resolution is deterministic per plot seed (see arts.js resolveKnobs),
+// and `place(x, y, key, { knobs: { tarp: 'teal' } })` pins one per tile.
+export const KNOBS = {
+  jhuggi:    { tarp:     { colors: { slate: '#5e7d9a', clay: '#7a6a58', teal: '#4e7d74', plum: '#7a5568' } } },
+  kaccha:    { wall:     { colors: { cream: '#e8d3b0', rose: '#dcbf94', sand: '#e6cfa5', wheat: '#d9c49a' } },
+               roof:     { options: ['thatch', 'tile'] } },
+  pakka:     { paint:    { colors: { cream: '#ddc7a2', teal: '#8fbcb3', pink: '#d9a7b0', ochre: '#d9b36a' } } },
+  haveli:    { stone:    { colors: { sandstone: '#e2c294', marble: '#eceff1', redstone: '#c98a6b' } } },
+  bungalow:  { paint:    { colors: { ivory: '#f2e3c8', sage: '#ccd8c2', sky: '#c3d6e2' } },
+               roof:     { options: ['clay', 'slate'] } },
+  flats:     { paint:    { colors: { mist: '#cfd8dc', sand: '#e0d5bd', sage: '#c2cdbd' } } },
+  chai:      { awning:   { colors: { slate: '#37474f', red: '#8a3b32', green: '#2e5d43' } } },
+  kirana:    { awning:   { options: ['red', 'teal', 'orange'] } },
+  dhaba:     { canopy:   { colors: { sky: '#4dd0e1', saffron: '#ffb74d', leaf: '#4caf7d' } } },
+  saree:     { silks:    { options: ['rainbow', 'ruby', 'peacock'] } },
+  mandir:    { shikhara: { options: ['gold', 'white', 'terracotta'] } },
+  masjid:    { dome:     { colors: { green: '#1b5e20', white: '#eceff1', teal: '#00897b' } } },
+  gurudwara: { dome:     { colors: { gold: '#d4a017', copper: '#b87333', white: '#eceff1' } } },
+  panchayat: { dome:     { colors: { terracotta: '#c96f2f', green: '#2e7d32', blue: '#1565c0' } } },
+};
+
 export const TIERS = [
   { pop: 0,    name: 'Chhota Gaon', hin: 'छोटा गाँव' },
   { pop: 120,  name: 'Kasba',       hin: 'कस्बा' },

@@ -2,6 +2,7 @@
 // and cow is drawn with canvas paths; no image assets ship with the game.
 
 import { TW, TH } from './iso.js';
+import { KNOBS } from './data.js';
 
 export const P = {
   skin: ['#8d5524', '#a9714b', '#c68642', '#7c4a2d'],
@@ -131,14 +132,37 @@ function pushLight(o) {
   lights.push({ x: _lo[0] + o.x * _lo[2], y: _lo[1] + o.y * _lo[2], r: o.r, c: o.c });
 }
 
+// ================= parametric knobs (adapted from polyfork) =================
+// Every placed building resolves its knobs deterministically from the plot
+// seed — the same tile always wears the same look — and an optional pinned
+// override (cell.knobs, saved with the city) wins over the seed pick.
+function pickKnob(options, seed, salt) {
+  const v = Math.sin(((seed || 0) + salt * 37.7) * 12.9898) * 43758.5453;
+  return options[Math.floor((v - Math.floor(v)) * options.length) % options.length];
+}
+const _knobCache = new Map();
+export function resolveKnobs(key, seed) {
+  const ck = key + ':' + (seed || 0);
+  let k = _knobCache.get(ck);
+  if (!k) {
+    k = {};
+    const defs = KNOBS[key];
+    if (defs) { let salt = 1; for (const n of Object.keys(defs)) k[n] = pickKnob(defs[n].options || Object.keys(defs[n].colors), seed, salt++); }
+    _knobCache.set(ck, k);
+  }
+  return { ...k };
+}
+
 // ================= BUILDINGS =================
 export function drawBuilding(ctx, key, sx, sy, o) {
   const cx = sx, cy = sy + TH / 2;
   const rng = (n) => { const v = Math.sin((o.seed + n * 37.7) * 12.9898) * 43758.5453; return v - Math.floor(v); };
+  const K = resolveKnobs(key, o.seed || 0);
+  if (o.knobs) for (const [n, v] of Object.entries(o.knobs)) K[n] = v;
   const night = o.night, lit = night || o.festival === 'diwali';
   switch (key) {
     case 'jhuggi': {
-      const c = rng(1) > 0.5 ? '#5e7d9a' : '#7a6a58';
+      const c = KNOBS.jhuggi.tarp.colors[K.tarp] || '#5e7d9a';
       box(ctx, cx, cy, 0.74, 0.74, 10, c, { topLight: 0.95 });
       ctx.fillStyle = 'rgba(30,30,35,.25)';
       diamondPath(ctx, cx, cy - 10, 0.8, 0.8); ctx.fill();
@@ -147,17 +171,24 @@ export function drawBuilding(ctx, key, sx, sy, o) {
       break;
     }
     case 'kaccha': {
-      box(ctx, cx, cy, 0.8, 0.8, 13, P.wall[o.seed % 4]);
-      // thatch roof
-      ctx.fillStyle = '#b89044';
-      ctx.beginPath(); ctx.moveTo(cx, cy - 26); ctx.lineTo(cx + 24, cy - 10); ctx.lineTo(cx, cy - 2); ctx.lineTo(cx - 24, cy - 10); ctx.closePath(); ctx.fill();
-      ctx.strokeStyle = '#8a6a2f'; ctx.lineWidth = 1;
-      for (let i = -2; i <= 2; i++) { ctx.beginPath(); ctx.moveTo(cx + i * 9, cy - 24 + Math.abs(i) * 5); ctx.lineTo(cx + i * 9, cy - 9 + Math.abs(i) * 4); ctx.stroke(); }
+      box(ctx, cx, cy, 0.8, 0.8, 13, KNOBS.kaccha.wall.colors[K.wall] || P.wall[0]);
+      // roof knob: thatch (original) or clay tile
+      if (K.roof === 'tile') {
+        ctx.fillStyle = '#b3552e';
+        ctx.beginPath(); ctx.moveTo(cx, cy - 26); ctx.lineTo(cx + 24, cy - 10); ctx.lineTo(cx, cy - 2); ctx.lineTo(cx - 24, cy - 10); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = '#8a4b1d'; ctx.lineWidth = 1;
+        for (let i = -2; i <= 2; i++) { ctx.beginPath(); ctx.moveTo(cx + i * 9, cy - 24 + Math.abs(i) * 5); ctx.lineTo(cx + i * 9, cy - 9 + Math.abs(i) * 4); ctx.stroke(); }
+      } else {
+        ctx.fillStyle = '#b89044';
+        ctx.beginPath(); ctx.moveTo(cx, cy - 26); ctx.lineTo(cx + 24, cy - 10); ctx.lineTo(cx, cy - 2); ctx.lineTo(cx - 24, cy - 10); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = '#8a6a2f'; ctx.lineWidth = 1;
+        for (let i = -2; i <= 2; i++) { ctx.beginPath(); ctx.moveTo(cx + i * 9, cy - 24 + Math.abs(i) * 5); ctx.lineTo(cx + i * 9, cy - 9 + Math.abs(i) * 4); ctx.stroke(); }
+      }
       archRow(ctx, cx - 16, cy - 4, 12, 1, '#5b4630');
       break;
     }
     case 'pakka': {
-      const t = box(ctx, cx, cy, 0.84, 0.84, 20, '#ddc7a2', { edge: '#b09b74' });
+      const t = box(ctx, cx, cy, 0.84, 0.84, 20, KNOBS.pakka.paint.colors[K.paint] || '#ddc7a2', { edge: '#b09b74' });
       ctx.fillStyle = '#c9b28a';
       ctx.beginPath(); ctx.moveTo(cx - 26, cy - 12); ctx.lineTo(cx, cy - 4); ctx.lineTo(cx + 26, cy - 12); ctx.lineTo(cx, cy - 20); ctx.closePath(); ctx.fill();
       windowRow(ctx, cx - 15, cy - 9, 30, 3, lit);
@@ -168,7 +199,7 @@ export function drawBuilding(ctx, key, sx, sy, o) {
       break;
     }
     case 'haveli': {
-      const t = box(ctx, cx, cy, 0.92, 0.92, 22, '#e2c294', { edge: '#a97f4a' });
+      const t = box(ctx, cx, cy, 0.92, 0.92, 22, KNOBS.haveli.stone.colors[K.stone] || '#e2c294', { edge: '#a97f4a' });
       archRow(ctx, cx - 26, cy - 8, 22, 2, '#7c4a03');
       archRow(ctx, cx + 4, cy - 8, 22, 2, '#7c4a03');
       archRow(ctx, cx - 16, cy - 26, 32, 3, '#7c4a03');
@@ -177,8 +208,8 @@ export function drawBuilding(ctx, key, sx, sy, o) {
       break;
     }
     case 'bungalow': {
-      box(ctx, cx, cy, 0.66, 0.66, 15, '#f2e3c8', { edge: '#c9b28a' });
-      ctx.fillStyle = '#b3552e';
+      box(ctx, cx, cy, 0.66, 0.66, 15, KNOBS.bungalow.paint.colors[K.paint] || '#f2e3c8', { edge: '#c9b28a' });
+      ctx.fillStyle = K.roof === 'slate' ? '#5a6670' : '#b3552e';
       ctx.beginPath(); ctx.moveTo(cx - 22, cy - 15); ctx.lineTo(cx, cy - 30); ctx.lineTo(cx + 22, cy - 15); ctx.lineTo(cx, cy - 8); ctx.closePath(); ctx.fill();
       // garden
       ctx.fillStyle = '#2e7d32';
@@ -190,7 +221,7 @@ export function drawBuilding(ctx, key, sx, sy, o) {
       break;
     }
     case 'flats': {
-      const t = box(ctx, cx, cy, 0.8, 0.8, 46, '#cfd8dc', { edge: '#90a4ae' });
+      const t = box(ctx, cx, cy, 0.8, 0.8, 46, KNOBS.flats.paint.colors[K.paint] || '#cfd8dc', { edge: '#90a4ae' });
       for (let f = 0; f < 4; f++) {
         windowRow(ctx, cx - 20, cy - 10 - f * 10, 16, 2, lit);
         windowRow(ctx, cx + 4, cy - 10 - f * 10, 16, 2, lit);
@@ -241,7 +272,7 @@ export function drawBuilding(ctx, key, sx, sy, o) {
     }
     case 'chai': {
       box(ctx, cx, cy, 0.5, 0.5, 9, '#8d6e63');
-      ctx.fillStyle = '#37474f';
+      ctx.fillStyle = KNOBS.chai.awning.colors[K.awning] || '#37474f';
       ctx.beginPath(); ctx.moveTo(cx - 12, cy - 16); ctx.lineTo(cx + 12, cy - 16); ctx.lineTo(cx + 15, cy - 11); ctx.lineTo(cx - 15, cy - 11); ctx.closePath(); ctx.fill();
       // kettle + steam
       ctx.fillStyle = '#cfd8dc'; ctx.beginPath(); ctx.arc(cx + 8, cy - 3, 3, 0, 7); ctx.fill();
@@ -253,15 +284,16 @@ export function drawBuilding(ctx, key, sx, sy, o) {
     }
     case 'kirana': {
       box(ctx, cx, cy, 0.78, 0.78, 16, '#f0e0be', { edge: '#b09b74' });
-      // striped awning
-      for (let i = 0; i < 4; i++) { ctx.fillStyle = i % 2 ? '#c62828' : '#fff'; ctx.fillRect(cx - 18 + i * 9, cy - 12, 9, 3.5); }
+      // striped awning (colourway knob)
+      const awc = { red: '#c62828', teal: '#00695c', orange: '#e8850c' }[K.awning] || '#c62828';
+      for (let i = 0; i < 4; i++) { ctx.fillStyle = i % 2 ? awc : '#fff'; ctx.fillRect(cx - 18 + i * 9, cy - 12, 9, 3.5); }
       windowRow(ctx, cx - 13, cy - 6, 26, 3, lit);
       ctx.fillStyle = '#d7a86e'; ctx.beginPath(); ctx.arc(cx - 16, cy + 4, 3, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(cx - 12, cy + 5, 2.4, 0, 7); ctx.fill();
       break;
     }
     case 'dhaba': {
       box(ctx, cx, cy, 0.76, 0.76, 14, '#c96f2f', { edge: '#8a4b1d' });
-      ctx.fillStyle = '#4dd0e1';
+      ctx.fillStyle = KNOBS.dhaba.canopy.colors[K.canopy] || '#4dd0e1';
       ctx.beginPath(); ctx.moveTo(cx - 20, cy - 20); ctx.lineTo(cx + 20, cy - 20); ctx.lineTo(cx + 24, cy - 14); ctx.lineTo(cx - 24, cy - 14); ctx.closePath(); ctx.fill();
       ctx.fillStyle = '#fff'; ctx.font = 'bold 6px system-ui'; ctx.textAlign = 'center'; ctx.fillText('DHABA', cx, cy - 16);
       // charpai
@@ -290,7 +322,9 @@ export function drawBuilding(ctx, key, sx, sy, o) {
     }
     case 'saree': {
       box(ctx, cx, cy, 0.78, 0.78, 16, '#fce4ec', { edge: '#ad7a8c' });
-      const cols = ['#d81b60', '#e8850c', '#7b1fa2', '#00897b', '#c62828'];
+      const cols = K.silks === 'ruby' ? ['#d81b60', '#b71c1c', '#e8850c', '#f8bbd0', '#c62828']
+                 : K.silks === 'peacock' ? ['#00897b', '#7b1fa2', '#1565c0', '#26c6da', '#4a148c']
+                 : ['#d81b60', '#e8850c', '#7b1fa2', '#00897b', '#c62828'];
       for (let i = 0; i < 5; i++) { ctx.fillStyle = cols[i]; ctx.fillRect(cx - 15 + i * 6, cy - 24, 4, 12); }
       windowRow(ctx, cx - 12, cy - 6, 22, 3, lit);
       break;
@@ -351,7 +385,7 @@ export function drawBuilding(ctx, key, sx, sy, o) {
     }
     case 'panchayat': {
       const t = box(ctx, cx, cy, 0.84, 0.84, 18, '#e8d3b0', { edge: '#a97f4a' });
-      dome(ctx, cx, t.y - 3, 8, '#c96f2f');
+      dome(ctx, cx, t.y - 3, 8, KNOBS.panchayat.dome.colors[K.dome] || '#c96f2f');
       ctx.fillStyle = '#b0bec5'; ctx.fillRect(cx - 10, cy - 4, 20, 3);
       archRow(ctx, cx - 18, cy - 6, 36, 3, '#7c4a03');
       break;
@@ -414,8 +448,9 @@ export function drawBuilding(ctx, key, sx, sy, o) {
       box(ctx, cx, cy, 0.8, 0.8, 12, '#e8c87a', { edge: '#a97f4a' });
       // shikhara: stacked tiers
       let wy = cy - 12, ww = 22;
+      const skc = { gold: ['#d4a017', '#c96f2f'], white: ['#fafafa', '#c9b28a'], terracotta: ['#c96f2f', '#a35d3f'] }[K.shikhara] || ['#d4a017', '#c96f2f'];
       for (let i = 0; i < 4; i++) {
-        ctx.fillStyle = i % 2 ? '#d4a017' : '#c96f2f';
+        ctx.fillStyle = skc[i % 2];
         ctx.beginPath(); ctx.moveTo(cx, wy - ww * 0.42); ctx.lineTo(cx + ww * 0.55, wy); ctx.lineTo(cx, wy + ww * 0.42); ctx.lineTo(cx - ww * 0.55, wy); ctx.closePath(); ctx.fill();
         wy -= 7; ww *= 0.72;
       }
@@ -428,23 +463,25 @@ export function drawBuilding(ctx, key, sx, sy, o) {
     }
     case 'masjid': {
       const t = box(ctx, cx, cy, 0.82, 0.82, 14, '#e8f5e9', { edge: '#81a68a' });
-      dome(ctx, cx, t.y - 2, 9, '#1b5e20');
+      const dc = KNOBS.masjid.dome.colors[K.dome] || '#1b5e20';
+      dome(ctx, cx, t.y - 2, 9, dc);
       // minaret
       ctx.fillStyle = '#e8f5e9'; ctx.fillRect(cx + 16, cy - 34, 4.5, 26);
-      dome(ctx, cx + 18.2, cy - 36, 3.4, '#1b5e20');
+      dome(ctx, cx + 18.2, cy - 36, 3.4, dc);
       // crescent
       ctx.fillStyle = '#d4a017';
       ctx.beginPath(); ctx.arc(cx + 18.2, cy - 42, 3, 0, 7); ctx.fill();
       ctx.fillStyle = '#e8f5e9'; ctx.beginPath(); ctx.arc(cx + 19.4, cy - 42.8, 2.4, 0, 7); ctx.fill();
-      archRow(ctx, cx - 14, cy - 6, 28, 3, '#1b5e20');
+      archRow(ctx, cx - 14, cy - 6, 28, 3, dc);
       if (lit) pushLight({ x: cx, y: cy - 10, r: 16, c: 'rgba(140,220,160,.15)' });
       break;
     }
     case 'gurudwara': {
       const t = box(ctx, cx, cy, 0.84, 0.84, 15, '#fafafa', { edge: '#c9b28a' });
-      dome(ctx, cx, t.y - 2, 8.5, '#d4a017');
+      const gd = KNOBS.gurudwara.dome.colors[K.dome] || '#d4a017';
+      dome(ctx, cx, t.y - 2, 8.5, gd);
       ctx.fillStyle = '#fafafa'; ctx.fillRect(cx - 20, cy - 38, 4, 26);
-      dome(ctx, cx - 18, cy - 40, 3, '#d4a017');
+      dome(ctx, cx - 18, cy - 40, 3, gd);
       // nishan sahib
       ctx.fillStyle = '#9e9e9e'; ctx.fillRect(cx + 15, cy - 40, 2.4, 30);
       ctx.fillStyle = '#e8850c';

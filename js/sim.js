@@ -13,7 +13,9 @@ export { hourOfDay, isNight };
 export function seasonOf(day) { return SEASONS[Math.floor((day - 1) / SEASON_DAYS) % 4]; }
 
 export function tick(dt) {
-  if (S.speed === 0) return;
+  // No city yet (welcome screen up, grid empty): the clock must not advance —
+  // newDay() would recomputeStats on an empty grid and crash the loop.
+  if (S.speed === 0 || !S.grid.length) return;
   S.tday += dt * S.speed;
   let guard = 0;
   while (S.tday >= ECON.daySeconds && guard++ < 5) {

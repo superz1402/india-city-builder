@@ -1,0 +1,72 @@
+# Apna Shehar — India City Builder
+
+> An isometric Indian city-building game in **pure vanilla JS ES modules** —
+> canvas 2.5D, zero dependencies, zero images, zero build step. Day/night
+> follows **real Indian Standard Time (UTC+05:30)**. Visitors walk the city
+> street-level (buildacountry play pattern); four bracket-named NPCs own its
+> homes and shops like a metaverse deed book.
+
+- Live: https://superz1402.github.io/india-city-builder/
+- Repo: https://github.com/superz1402/india-city-builder
+- Machine-readable content catalog: `catalog.json` (this site, repo root)
+- Walk-mode reverse-engineering notes: `docs/WALK-REFERENCE.md` (repo)
+- Regenerate the catalog: `node scripts/catalog.mjs`
+
+## Catalog schema (v3 — adapted from lucas-martinic/polyfork-catalog)
+
+```jsonc
+{
+  "site": "...", "licence": "...", "api": "<this file>",
+  "counts": { "assets": 41, "kits": 8, "knobbed": 14, "residents": 4, ... },
+  "kits":   [ { "id": "mohalla-homes", "name": "Mohalla Homes", "category": "house", "parts": 6 } ],
+  "assets": [ {
+    "id": "jhuggi", "title": "Jhuggi", "type": "building", "kit": "mohalla-homes",
+    "category": "house",
+    "stats": { "cost": 400, "homes": 5, "income": 0, ... },
+    "knobs": { "tarp": { "options": ["slate","clay","teal","plum"], "colors": { ... } } },
+    "def": "js/data.js BUILDINGS.jhuggi",
+    "art": "js/arts.js drawBuilding case 'jhuggi'"
+  } ],
+  "residents": [...], "deeds": [...], "tiers": [...], "seasons": [...], "festivals": [...]
+}
+```
+
+`type` is `building` (all categories except decor), `prop` (road/bridge/
+lamp/flag) or `nature` (tree). Farm assets also carry `seasonResponse` —
+they react to the four in-game seasons natively (wheat golds at harvest,
+paddy floods in monsoon, mango fruits in summer).
+
+## Parametric knobs ("a model is a program", polyfork-style)
+
+Every knobbed building resolves its look **deterministically from the plot
+seed** — the same tile always wears the same colourway — so a city shows
+stable per-plot variety with no saved art. `KNOBS` in `js/data.js` is the
+registry; option 0 of every knob is the original pre-knob look.
+
+Pin one per tile in code (the owner maintains everything code-side):
+
+```js
+place(18, 18, 'pakka', { knobs: { paint: 'teal' } });
+// invalid knob or option → { ok: false, why: "paint: 'x' — valid options: cream, teal, pink, ochre" }
+```
+
+Pins live on the grid cell, persist in save v2 (`knobs: {"x,y": {...}}`)
+and migrate cleanly: v1 saves load unchanged.
+
+## Extending the city (everything is code-side)
+
+1. **Building** — add one line to `BUILDINGS` in `js/data.js` + one draw
+   case in `js/arts.js`. Menu, thumbnails, economy and tiers follow.
+2. **Resident** — `RESIDENTS` in `js/owners.js`; **max four, keep the
+   `[NPC]` tag in the name** (owner rule). Bump `DEEDS_KEY` if you rename.
+3. **Deed** — `ASSIGNMENTS` in `js/owners.js`, tiles as `"x,y"` strings.
+4. **Knob** — add an entry to `KNOBS` (colors map or variant options) and
+   read `K.paint` / `K.roof`… in the draw case via the resolved `K`.
+5. Regenerate `catalog.json`, keep `js/*.js` passing
+   `node --input-type=module --check`, commit.
+
+## Constraints
+
+- No runtime dependencies, no images, no build step — procedural canvas only.
+- UI laws in `AGENTS.md` §4 (tokens, ≥44px targets, no emoji icons, …).
+- `health.yml` greps pushes for token-like strings; never commit secrets.

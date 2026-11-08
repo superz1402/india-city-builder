@@ -92,7 +92,7 @@ export function render(now) {
         diamond(p.x, p.y); ctx.fill();
       }
       const gd = gridAt(x, y);
-      if (gd) drawables.push({ sy: p.y, k: gd.k, x, y, sd: gd.seed });
+      if (gd) drawables.push({ sy: p.y, k: gd.k, x, y, sd: gd.seed, kb: gd.knobs || null });
     }
   }
 
@@ -149,6 +149,7 @@ export function render(now) {
       const i = isoOf(dr.x, dr.y);
       const p = worldToScreen(i.x, i.y);
       env.seed = dr.sd;
+      env.knobs = dr.kb;
       setLightOrigin(p.x, p.y, cam.z);
       ctx.save();
       ctx.translate(p.x, p.y);

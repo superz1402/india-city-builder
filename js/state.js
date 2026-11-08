@@ -1,7 +1,7 @@
 // state.js — game state, map generation, placement rules, daily aggregates.
 // No DOM access here; UI and rendering subscribe to state changes.
 
-import { BUILDINGS, TIERS, ECON } from './data.js';
+import { BUILDINGS, TIERS, ECON, KNOBS } from './data.js';
 
 export const MAP = 36; // map is MAP x MAP tiles
 
@@ -17,7 +17,7 @@ export function makeRng(seed) {
 }
 
 export const S = {
-  v: 1,                 // save version (save.js migrations key off this)
+  v: 2,                 // save version (save.js migrations key off this; v2 = knob overrides)
   seed: 1,
   day: 1,
   tday: 0,              // seconds elapsed in current day
@@ -87,9 +87,31 @@ export function newGame(seed = (Date.now() % 100000)) {
   pushNotice('Welcome to your gaon! Build homes and a farm to grow.', 'info');
 }
 
-function placeRaw(x, y, key) {
-  S.grid[y][x] = { k: key, born: S.day, seed: (x * 31 + y * 17) % 97 };
+function placeRaw(x, y, key, knobs = null) {
+  const cell = { k: key, born: S.day, seed: (x * 31 + y * 17) % 97 };
+  if (knobs && Object.keys(knobs).length) cell.knobs = { ...knobs };
+  S.grid[y][x] = cell;
   S.counts[key] = (S.counts[key] || 0) + 1;
+}
+
+// Validate a knob pin against the KNOBS registry (data.js). Returns
+// { ok, knobs | why } — unknown knob or bad option value gets a helpful
+// message listing the valid options.
+function validateKnobs(key, knobs) {
+  if (!knobs || typeof knobs !== 'object') return { ok: true, knobs: null };
+  const defs = KNOBS[key] || {};
+  const out = {};
+  for (const [name, val] of Object.entries(knobs)) {
+    const kd = defs[name];
+    if (!kd) {
+      const names = Object.keys(defs);
+      return { ok: false, why: names.length ? `${BUILDINGS[key].name} knobs: ${names.join(', ')}` : `${BUILDINGS[key].name} has no knobs` };
+    }
+    const valid = kd.options || Object.keys(kd.colors || {});
+    if (!valid.includes(val)) return { ok: false, why: `${name}: '${val}' — valid options: ${valid.join(', ')}` };
+    out[name] = val;
+  }
+  return { ok: true, knobs: Object.keys(out).length ? out : null };
 }
 
 // ---------- placement rules ----------
@@ -112,15 +134,17 @@ export function canPlace(x, y, key) {
   return { ok: true };
 }
 
-export function place(x, y, key) {
+export function place(x, y, key, opts = {}) {
   const def = BUILDINGS[key];
   if (!def) return { ok: false, why: 'Unknown building' };
+  const kv = validateKnobs(key, opts.knobs);
+  if (!kv.ok) return kv;
   const c = canPlace(x, y, key);
   if (!c.ok) return c;
   if (S.money < def.cost) return { ok: false, why: `Need ₹${def.cost.toLocaleString('en-IN')}` };
   const g = S.grid[y][x];
   if (g && S.grid[y][x].k === 'tree') S.counts.tree = Math.max(0, (S.counts.tree || 1) - 1);
-  placeRaw(x, y, key);
+  placeRaw(x, y, key, kv.knobs);
   S.money -= def.cost;
   recomputeStats();
   return { ok: true };

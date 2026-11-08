@@ -1,830 +1,1263 @@
 {
+  "site": "https://superz1402.github.io/india-city-builder/",
+  "licence": "https://github.com/superz1402/india-city-builder/blob/main/LICENSE",
+  "api": "https://superz1402.github.io/india-city-builder/llms.txt",
+  "repo": "https://github.com/superz1402/india-city-builder",
   "game": "Apna Shehar — India City Builder",
-  "version": 2,
-  "generator": "scripts/catalog.mjs (adapted from lucas-martinic/polyfork-catalog)",
-  "generatedAt": "2026-11-08T18:02:44.443Z",
+  "version": 3,
+  "generator": "scripts/catalog.mjs (schema adapted from lucas-martinic/polyfork-catalog)",
+  "generatedAt": "2026-11-08T18:47:11.679Z",
   "clock": "Asia/Kolkata (UTC+05:30) — real time drives day/night",
   "counts": {
-    "buildings": 41,
-    "residents": 14,
+    "assets": 41,
+    "kits": 8,
+    "knobbed": 14,
+    "residents": 4,
     "categories": 8,
     "festivals": 5,
     "tiers": 5
   },
-  "categories": [
+  "kits": [
     {
-      "id": "house",
-      "name": "Homes"
+      "id": "mohalla-homes",
+      "name": "Mohalla Homes",
+      "category": "house",
+      "desc": "Jhuggi tarp to haveli jharokhas — the gully where everyone lives.",
+      "parts": 6
     },
     {
-      "id": "farm",
-      "name": "Farms"
+      "id": "kheti-baadi",
+      "name": "Kheti-Baadi",
+      "category": "farm",
+      "desc": "Fields, paddies and orchards that feed the shehar.",
+      "parts": 4
     },
     {
-      "id": "shop",
-      "name": "Bazaar"
+      "id": "bazaar-line",
+      "name": "Bazaar Line",
+      "category": "shop",
+      "desc": "Chai tapri to bank — commerce, loudly.",
+      "parts": 8
     },
     {
-      "id": "civic",
-      "name": "Seva"
+      "id": "seva-sadan",
+      "name": "Seva Sadan",
+      "category": "civic",
+      "desc": "Public seva — school, hospital, bijli, paani.",
+      "parts": 8
     },
     {
-      "id": "faith",
-      "name": "Faith"
+      "id": "bhakti-sthal",
+      "name": "Bhakti Sthal",
+      "category": "faith",
+      "desc": "Mandir, masjid, gurudwara, church — side by side, always.",
+      "parts": 4
     },
     {
-      "id": "fun",
-      "name": "Fun"
+      "id": "maidan-jashn",
+      "name": "Maidan & Jashn",
+      "category": "fun",
+      "desc": "Parks, cricket and the mela that lights up festivals.",
+      "parts": 3
     },
     {
-      "id": "work",
-      "name": "Industry"
+      "id": "loom-mill",
+      "name": "Loom & Mill",
+      "category": "work",
+      "desc": "Kilns, factories and mills — jobs, with smoke.",
+      "parts": 3
     },
     {
-      "id": "decor",
-      "name": "Roads"
+      "id": "gully-sajja",
+      "name": "Gully Sajja",
+      "category": "decor",
+      "desc": "Roads, trees, lamps — the trim that makes lanes lived-in.",
+      "parts": 5
     }
   ],
-  "buildings": [
+  "assets": [
     {
-      "key": "jhuggi",
-      "name": "Jhuggi",
+      "id": "jhuggi",
+      "title": "Jhuggi",
+      "type": "building",
+      "kit": "mohalla-homes",
       "category": "house",
-      "cost": 400,
-      "upkeep": 1,
-      "homes": 5,
-      "jobs": 0,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 0,
-      "happiness": 0,
-      "pollution": 0,
-      "unlockTier": 0,
-      "description": "A tarp-and-mud home. Humble, but home."
+      "stats": {
+        "cost": 400,
+        "upkeep": 1,
+        "homes": 5,
+        "jobs": 0,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 0,
+        "happiness": 0,
+        "pollution": 0,
+        "unlockTier": 0
+      },
+      "description": "A tarp-and-mud home. Humble, but home.",
+      "knobs": {
+        "tarp": {
+          "options": [
+            "slate",
+            "clay",
+            "teal",
+            "plum"
+          ],
+          "colors": {
+            "slate": "#5e7d9a",
+            "clay": "#7a6a58",
+            "teal": "#4e7d74",
+            "plum": "#7a5568"
+          }
+        }
+      },
+      "def": "js/data.js BUILDINGS.jhuggi",
+      "art": "js/arts.js drawBuilding case 'jhuggi'"
     },
     {
-      "key": "kaccha",
-      "name": "Kaccha Ghar",
+      "id": "kaccha",
+      "title": "Kaccha Ghar",
+      "type": "building",
+      "kit": "mohalla-homes",
       "category": "house",
-      "cost": 1100,
-      "upkeep": 2,
-      "homes": 9,
-      "jobs": 0,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 0,
-      "happiness": 0,
-      "pollution": 0,
-      "unlockTier": 0,
-      "description": "Mud walls, thatch roof, cool in summer."
+      "stats": {
+        "cost": 1100,
+        "upkeep": 2,
+        "homes": 9,
+        "jobs": 0,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 0,
+        "happiness": 0,
+        "pollution": 0,
+        "unlockTier": 0
+      },
+      "description": "Mud walls, thatch roof, cool in summer.",
+      "knobs": {
+        "wall": {
+          "options": [
+            "cream",
+            "rose",
+            "sand",
+            "wheat"
+          ],
+          "colors": {
+            "cream": "#e8d3b0",
+            "rose": "#dcbf94",
+            "sand": "#e6cfa5",
+            "wheat": "#d9c49a"
+          }
+        },
+        "roof": {
+          "options": [
+            "thatch",
+            "tile"
+          ]
+        }
+      },
+      "def": "js/data.js BUILDINGS.kaccha",
+      "art": "js/arts.js drawBuilding case 'kaccha'"
     },
     {
-      "key": "pakka",
-      "name": "Pakka Ghar",
+      "id": "pakka",
+      "title": "Pakka Ghar",
+      "type": "building",
+      "kit": "mohalla-homes",
       "category": "house",
-      "cost": 3600,
-      "upkeep": 5,
-      "homes": 16,
-      "jobs": 0,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 0,
-      "happiness": 0,
-      "pollution": 0,
-      "unlockTier": 0,
-      "description": "Brick and cement with a rooftop tank."
+      "stats": {
+        "cost": 3600,
+        "upkeep": 5,
+        "homes": 16,
+        "jobs": 0,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 0,
+        "happiness": 0,
+        "pollution": 0,
+        "unlockTier": 0
+      },
+      "description": "Brick and cement with a rooftop tank.",
+      "knobs": {
+        "paint": {
+          "options": [
+            "cream",
+            "teal",
+            "pink",
+            "ochre"
+          ],
+          "colors": {
+            "cream": "#ddc7a2",
+            "teal": "#8fbcb3",
+            "pink": "#d9a7b0",
+            "ochre": "#d9b36a"
+          }
+        }
+      },
+      "def": "js/data.js BUILDINGS.pakka",
+      "art": "js/arts.js drawBuilding case 'pakka'"
     },
     {
-      "key": "haveli",
-      "name": "Haveli",
+      "id": "haveli",
+      "title": "Haveli",
+      "type": "building",
+      "kit": "mohalla-homes",
       "category": "house",
-      "cost": 8500,
-      "upkeep": 10,
-      "homes": 18,
-      "jobs": 0,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 0,
-      "happiness": 2,
-      "pollution": 0,
-      "unlockTier": 2,
-      "description": "Carved jharokhas around a courtyard."
+      "stats": {
+        "cost": 8500,
+        "upkeep": 10,
+        "homes": 18,
+        "jobs": 0,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 0,
+        "happiness": 2,
+        "pollution": 0,
+        "unlockTier": 2
+      },
+      "description": "Carved jharokhas around a courtyard.",
+      "knobs": {
+        "stone": {
+          "options": [
+            "sandstone",
+            "marble",
+            "redstone"
+          ],
+          "colors": {
+            "sandstone": "#e2c294",
+            "marble": "#eceff1",
+            "redstone": "#c98a6b"
+          }
+        }
+      },
+      "def": "js/data.js BUILDINGS.haveli",
+      "art": "js/arts.js drawBuilding case 'haveli'"
     },
     {
-      "key": "bungalow",
-      "name": "Bungalow",
+      "id": "bungalow",
+      "title": "Bungalow",
+      "type": "building",
+      "kit": "mohalla-homes",
       "category": "house",
-      "cost": 7500,
-      "upkeep": 8,
-      "homes": 8,
-      "jobs": 0,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 0,
-      "happiness": 3,
-      "pollution": 0,
-      "unlockTier": 3,
-      "description": "A gated garden house for one lucky family."
+      "stats": {
+        "cost": 7500,
+        "upkeep": 8,
+        "homes": 8,
+        "jobs": 0,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 0,
+        "happiness": 3,
+        "pollution": 0,
+        "unlockTier": 3
+      },
+      "description": "A gated garden house for one lucky family.",
+      "knobs": {
+        "paint": {
+          "options": [
+            "ivory",
+            "sage",
+            "sky"
+          ],
+          "colors": {
+            "ivory": "#f2e3c8",
+            "sage": "#ccd8c2",
+            "sky": "#c3d6e2"
+          }
+        },
+        "roof": {
+          "options": [
+            "clay",
+            "slate"
+          ]
+        }
+      },
+      "def": "js/data.js BUILDINGS.bungalow",
+      "art": "js/arts.js drawBuilding case 'bungalow'"
     },
     {
-      "key": "flats",
-      "name": "Flat Block",
+      "id": "flats",
+      "title": "Flat Block",
+      "type": "building",
+      "kit": "mohalla-homes",
       "category": "house",
-      "cost": 13000,
-      "upkeep": 18,
-      "homes": 44,
-      "jobs": 2,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 0,
-      "happiness": 0,
-      "pollution": 0,
-      "unlockTier": 3,
-      "description": "Four floors of city life and drying clothes."
+      "stats": {
+        "cost": 13000,
+        "upkeep": 18,
+        "homes": 44,
+        "jobs": 2,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 0,
+        "happiness": 0,
+        "pollution": 0,
+        "unlockTier": 3
+      },
+      "description": "Four floors of city life and drying clothes.",
+      "knobs": {
+        "paint": {
+          "options": [
+            "mist",
+            "sand",
+            "sage"
+          ],
+          "colors": {
+            "mist": "#cfd8dc",
+            "sand": "#e0d5bd",
+            "sage": "#c2cdbd"
+          }
+        }
+      },
+      "def": "js/data.js BUILDINGS.flats",
+      "art": "js/arts.js drawBuilding case 'flats'"
     },
     {
-      "key": "wheat",
-      "name": "Wheat Field",
+      "id": "wheat",
+      "title": "Wheat Field",
+      "type": "building",
+      "kit": "kheti-baadi",
       "category": "farm",
-      "cost": 900,
-      "upkeep": 3,
-      "homes": 0,
-      "jobs": 2,
-      "food": 34,
-      "water": 0,
-      "power": 0,
-      "income": 0,
-      "happiness": 0,
-      "pollution": 0,
-      "unlockTier": 0,
-      "description": "Golden in harvest season. Feeds the shehar."
+      "stats": {
+        "cost": 900,
+        "upkeep": 3,
+        "homes": 0,
+        "jobs": 2,
+        "food": 34,
+        "water": 0,
+        "power": 0,
+        "income": 0,
+        "happiness": 0,
+        "pollution": 0,
+        "unlockTier": 0
+      },
+      "description": "Golden in harvest season. Feeds the shehar.",
+      "seasonResponse": [
+        "summer",
+        "monsoon",
+        "winter",
+        "harvest"
+      ],
+      "def": "js/data.js BUILDINGS.wheat",
+      "art": "js/arts.js drawBuilding case 'wheat'"
     },
     {
-      "key": "paddy",
-      "name": "Rice Paddy",
+      "id": "paddy",
+      "title": "Rice Paddy",
+      "type": "building",
+      "kit": "kheti-baadi",
       "category": "farm",
-      "cost": 1200,
-      "upkeep": 3,
-      "homes": 0,
-      "jobs": 2,
-      "food": 28,
-      "water": 0,
-      "power": 0,
-      "income": 0,
-      "happiness": 0,
-      "pollution": 0,
-      "unlockTier": 0,
-      "description": "Loves the monsoon — food doubles when it rains."
+      "stats": {
+        "cost": 1200,
+        "upkeep": 3,
+        "homes": 0,
+        "jobs": 2,
+        "food": 28,
+        "water": 0,
+        "power": 0,
+        "income": 0,
+        "happiness": 0,
+        "pollution": 0,
+        "unlockTier": 0
+      },
+      "description": "Loves the monsoon — food doubles when it rains.",
+      "seasonResponse": [
+        "summer",
+        "monsoon",
+        "winter",
+        "harvest"
+      ],
+      "def": "js/data.js BUILDINGS.paddy",
+      "art": "js/arts.js drawBuilding case 'paddy'"
     },
     {
-      "key": "dairy",
-      "name": "Dairy",
+      "id": "dairy",
+      "title": "Dairy",
+      "type": "building",
+      "kit": "kheti-baadi",
       "category": "farm",
-      "cost": 2400,
-      "upkeep": 6,
-      "homes": 0,
-      "jobs": 2,
-      "food": 12,
-      "water": 0,
-      "power": 0,
-      "income": 30,
-      "happiness": 0,
-      "pollution": 0,
-      "unlockTier": 1,
-      "description": "Fresh doodh every morning."
+      "stats": {
+        "cost": 2400,
+        "upkeep": 6,
+        "homes": 0,
+        "jobs": 2,
+        "food": 12,
+        "water": 0,
+        "power": 0,
+        "income": 30,
+        "happiness": 0,
+        "pollution": 0,
+        "unlockTier": 1
+      },
+      "description": "Fresh doodh every morning.",
+      "def": "js/data.js BUILDINGS.dairy",
+      "art": "js/arts.js drawBuilding case 'dairy'"
     },
     {
-      "key": "mango",
-      "name": "Mango Orchard",
+      "id": "mango",
+      "title": "Mango Orchard",
+      "type": "building",
+      "kit": "kheti-baadi",
       "category": "farm",
-      "cost": 1500,
-      "upkeep": 2,
-      "homes": 0,
-      "jobs": 1,
-      "food": 6,
-      "water": 0,
-      "power": 0,
-      "income": 20,
-      "happiness": 2,
-      "pollution": 0,
-      "unlockTier": 1,
-      "description": "Aam ka baagh. Shade and sweetness."
+      "stats": {
+        "cost": 1500,
+        "upkeep": 2,
+        "homes": 0,
+        "jobs": 1,
+        "food": 6,
+        "water": 0,
+        "power": 0,
+        "income": 20,
+        "happiness": 2,
+        "pollution": 0,
+        "unlockTier": 1
+      },
+      "description": "Aam ka baagh. Shade and sweetness.",
+      "seasonResponse": [
+        "summer",
+        "monsoon",
+        "winter",
+        "harvest"
+      ],
+      "def": "js/data.js BUILDINGS.mango",
+      "art": "js/arts.js drawBuilding case 'mango'"
     },
     {
-      "key": "chai",
-      "name": "Chai Tapri",
+      "id": "chai",
+      "title": "Chai Tapri",
+      "type": "building",
+      "kit": "bazaar-line",
       "category": "shop",
-      "cost": 650,
-      "upkeep": 1,
-      "homes": 0,
-      "jobs": 1,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 20,
-      "happiness": 1,
-      "pollution": 0,
-      "unlockTier": 0,
-      "description": "Cutting chai, bun-maska, full Adda."
+      "stats": {
+        "cost": 650,
+        "upkeep": 1,
+        "homes": 0,
+        "jobs": 1,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 20,
+        "happiness": 1,
+        "pollution": 0,
+        "unlockTier": 0
+      },
+      "description": "Cutting chai, bun-maska, full Adda.",
+      "knobs": {
+        "awning": {
+          "options": [
+            "slate",
+            "red",
+            "green"
+          ],
+          "colors": {
+            "slate": "#37474f",
+            "red": "#8a3b32",
+            "green": "#2e5d43"
+          }
+        }
+      },
+      "def": "js/data.js BUILDINGS.chai",
+      "art": "js/arts.js drawBuilding case 'chai'"
     },
     {
-      "key": "kirana",
-      "name": "Kirana Shop",
+      "id": "kirana",
+      "title": "Kirana Shop",
+      "type": "building",
+      "kit": "bazaar-line",
       "category": "shop",
-      "cost": 2600,
-      "upkeep": 4,
-      "homes": 0,
-      "jobs": 2,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 55,
-      "happiness": 0,
-      "pollution": 0,
-      "unlockTier": 0,
-      "description": "Udhaar-khata open, biscuits stacked high."
+      "stats": {
+        "cost": 2600,
+        "upkeep": 4,
+        "homes": 0,
+        "jobs": 2,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 55,
+        "happiness": 0,
+        "pollution": 0,
+        "unlockTier": 0
+      },
+      "description": "Udhaar-khata open, biscuits stacked high.",
+      "knobs": {
+        "awning": {
+          "options": [
+            "red",
+            "teal",
+            "orange"
+          ]
+        }
+      },
+      "def": "js/data.js BUILDINGS.kirana",
+      "art": "js/arts.js drawBuilding case 'kirana'"
     },
     {
-      "key": "dhaba",
-      "name": "Dhaba",
+      "id": "dhaba",
+      "title": "Dhaba",
+      "type": "building",
+      "kit": "bazaar-line",
       "category": "shop",
-      "cost": 4200,
-      "upkeep": 7,
-      "homes": 0,
-      "jobs": 3,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 95,
-      "happiness": 2,
-      "pollution": 0,
-      "unlockTier": 1,
-      "description": "Tandoori roti, charpais, truck-wala swag."
+      "stats": {
+        "cost": 4200,
+        "upkeep": 7,
+        "homes": 0,
+        "jobs": 3,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 95,
+        "happiness": 2,
+        "pollution": 0,
+        "unlockTier": 1
+      },
+      "description": "Tandoori roti, charpais, truck-wala swag.",
+      "knobs": {
+        "canopy": {
+          "options": [
+            "sky",
+            "saffron",
+            "leaf"
+          ],
+          "colors": {
+            "sky": "#4dd0e1",
+            "saffron": "#ffb74d",
+            "leaf": "#4caf7d"
+          }
+        }
+      },
+      "def": "js/data.js BUILDINGS.dhaba",
+      "art": "js/arts.js drawBuilding case 'dhaba'"
     },
     {
-      "key": "bazaar",
-      "name": "Bazaar",
+      "id": "bazaar",
+      "title": "Bazaar",
+      "type": "building",
+      "kit": "bazaar-line",
       "category": "shop",
-      "cost": 7000,
-      "upkeep": 12,
-      "homes": 0,
-      "jobs": 8,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 210,
-      "happiness": 2,
-      "pollution": 0,
-      "unlockTier": 1,
-      "description": "Canopy stalls selling everything, loudly."
+      "stats": {
+        "cost": 7000,
+        "upkeep": 12,
+        "homes": 0,
+        "jobs": 8,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 210,
+        "happiness": 2,
+        "pollution": 0,
+        "unlockTier": 1
+      },
+      "description": "Canopy stalls selling everything, loudly.",
+      "def": "js/data.js BUILDINGS.bazaar",
+      "art": "js/arts.js drawBuilding case 'bazaar'"
     },
     {
-      "key": "saree",
-      "name": "Saree Shop",
+      "id": "saree",
+      "title": "Saree Shop",
+      "type": "building",
+      "kit": "bazaar-line",
       "category": "shop",
-      "cost": 5500,
-      "upkeep": 5,
-      "homes": 0,
-      "jobs": 3,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 105,
-      "happiness": 0,
-      "pollution": 0,
-      "unlockTier": 2,
-      "description": "Kanjivaram to cotton, folded like rainbows."
+      "stats": {
+        "cost": 5500,
+        "upkeep": 5,
+        "homes": 0,
+        "jobs": 3,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 105,
+        "happiness": 0,
+        "pollution": 0,
+        "unlockTier": 2
+      },
+      "description": "Kanjivaram to cotton, folded like rainbows.",
+      "knobs": {
+        "silks": {
+          "options": [
+            "rainbow",
+            "ruby",
+            "peacock"
+          ]
+        }
+      },
+      "def": "js/data.js BUILDINGS.saree",
+      "art": "js/arts.js drawBuilding case 'saree'"
     },
     {
-      "key": "jeweller",
-      "name": "Jewellery Shop",
+      "id": "jeweller",
+      "title": "Jewellery Shop",
+      "type": "building",
+      "kit": "bazaar-line",
       "category": "shop",
-      "cost": 10000,
-      "upkeep": 8,
-      "homes": 0,
-      "jobs": 3,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 230,
-      "happiness": 0,
-      "pollution": 0,
-      "unlockTier": 3,
-      "description": "For weddings, festivals and safe keeping."
+      "stats": {
+        "cost": 10000,
+        "upkeep": 8,
+        "homes": 0,
+        "jobs": 3,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 230,
+        "happiness": 0,
+        "pollution": 0,
+        "unlockTier": 3
+      },
+      "description": "For weddings, festivals and safe keeping.",
+      "def": "js/data.js BUILDINGS.jeweller",
+      "art": "js/arts.js drawBuilding case 'jeweller'"
     },
     {
-      "key": "bank",
-      "name": "Bank",
+      "id": "bank",
+      "title": "Bank",
+      "type": "building",
+      "kit": "bazaar-line",
       "category": "shop",
-      "cost": 15000,
-      "upkeep": 14,
-      "homes": 0,
-      "jobs": 6,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 300,
-      "happiness": 0,
-      "pollution": 0,
-      "unlockTier": 3,
-      "description": "Loans, lockers, and a queue by 10 am."
+      "stats": {
+        "cost": 15000,
+        "upkeep": 14,
+        "homes": 0,
+        "jobs": 6,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 300,
+        "happiness": 0,
+        "pollution": 0,
+        "unlockTier": 3
+      },
+      "description": "Loans, lockers, and a queue by 10 am.",
+      "def": "js/data.js BUILDINGS.bank",
+      "art": "js/arts.js drawBuilding case 'bank'"
     },
     {
-      "key": "cinema",
-      "name": "Cinema Hall",
+      "id": "cinema",
+      "title": "Cinema Hall",
+      "type": "building",
+      "kit": "bazaar-line",
       "category": "shop",
-      "cost": 12000,
-      "upkeep": 12,
-      "homes": 0,
-      "jobs": 5,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 140,
-      "happiness": 5,
-      "pollution": 0,
-      "unlockTier": 2,
-      "description": "Hand-painted posters, interval samosa."
+      "stats": {
+        "cost": 12000,
+        "upkeep": 12,
+        "homes": 0,
+        "jobs": 5,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 140,
+        "happiness": 5,
+        "pollution": 0,
+        "unlockTier": 2
+      },
+      "description": "Hand-painted posters, interval samosa.",
+      "def": "js/data.js BUILDINGS.cinema",
+      "art": "js/arts.js drawBuilding case 'cinema'"
     },
     {
-      "key": "school",
-      "name": "School",
+      "id": "school",
+      "title": "School",
+      "type": "building",
+      "kit": "seva-sadan",
       "category": "civic",
-      "cost": 6000,
-      "upkeep": 12,
-      "homes": 0,
-      "jobs": 6,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 0,
-      "happiness": 6,
-      "pollution": 0,
-      "unlockTier": 1,
-      "description": "Prayer assembly, chalk dust, bright futures."
+      "stats": {
+        "cost": 6000,
+        "upkeep": 12,
+        "homes": 0,
+        "jobs": 6,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 0,
+        "happiness": 6,
+        "pollution": 0,
+        "unlockTier": 1
+      },
+      "description": "Prayer assembly, chalk dust, bright futures.",
+      "def": "js/data.js BUILDINGS.school",
+      "art": "js/arts.js drawBuilding case 'school'"
     },
     {
-      "key": "hospital",
-      "name": "Hospital",
+      "id": "hospital",
+      "title": "Hospital",
+      "type": "building",
+      "kit": "seva-sadan",
       "category": "civic",
-      "cost": 12000,
-      "upkeep": 20,
-      "homes": 0,
-      "jobs": 8,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 0,
-      "happiness": 8,
-      "pollution": 0,
-      "unlockTier": 2,
-      "description": "Clean wards and a green ambulance."
+      "stats": {
+        "cost": 12000,
+        "upkeep": 20,
+        "homes": 0,
+        "jobs": 8,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 0,
+        "happiness": 8,
+        "pollution": 0,
+        "unlockTier": 2
+      },
+      "description": "Clean wards and a green ambulance.",
+      "def": "js/data.js BUILDINGS.hospital",
+      "art": "js/arts.js drawBuilding case 'hospital'"
     },
     {
-      "key": "panchayat",
-      "name": "Panchayat Bhavan",
+      "id": "panchayat",
+      "title": "Panchayat Bhavan",
+      "type": "building",
+      "kit": "seva-sadan",
       "category": "civic",
-      "cost": 5000,
-      "upkeep": 8,
-      "homes": 0,
-      "jobs": 0,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 0,
-      "happiness": 4,
-      "pollution": 0,
-      "unlockTier": 1,
-      "description": "Where the shehar debates and decides."
+      "stats": {
+        "cost": 5000,
+        "upkeep": 8,
+        "homes": 0,
+        "jobs": 0,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 0,
+        "happiness": 4,
+        "pollution": 0,
+        "unlockTier": 1
+      },
+      "description": "Where the shehar debates and decides.",
+      "knobs": {
+        "dome": {
+          "options": [
+            "terracotta",
+            "green",
+            "blue"
+          ],
+          "colors": {
+            "terracotta": "#c96f2f",
+            "green": "#2e7d32",
+            "blue": "#1565c0"
+          }
+        }
+      },
+      "def": "js/data.js BUILDINGS.panchayat",
+      "art": "js/arts.js drawBuilding case 'panchayat'"
     },
     {
-      "key": "police",
-      "name": "Police Chowki",
+      "id": "police",
+      "title": "Police Chowki",
+      "type": "building",
+      "kit": "seva-sadan",
       "category": "civic",
-      "cost": 4200,
-      "upkeep": 8,
-      "homes": 0,
-      "jobs": 3,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 0,
-      "happiness": 3,
-      "pollution": 0,
-      "unlockTier": 1,
-      "description": "Keeps the gully peace."
+      "stats": {
+        "cost": 4200,
+        "upkeep": 8,
+        "homes": 0,
+        "jobs": 3,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 0,
+        "happiness": 3,
+        "pollution": 0,
+        "unlockTier": 1
+      },
+      "description": "Keeps the gully peace.",
+      "def": "js/data.js BUILDINGS.police",
+      "art": "js/arts.js drawBuilding case 'police'"
     },
     {
-      "key": "watertank",
-      "name": "Water Tank",
+      "id": "watertank",
+      "title": "Water Tank",
+      "type": "building",
+      "kit": "seva-sadan",
       "category": "civic",
-      "cost": 3200,
-      "upkeep": 4,
-      "homes": 0,
-      "jobs": 0,
-      "food": 0,
-      "water": 70,
-      "power": 0,
-      "income": 0,
-      "happiness": 0,
-      "pollution": 0,
-      "unlockTier": 0,
-      "description": "Overhead tank + hand pumps below."
+      "stats": {
+        "cost": 3200,
+        "upkeep": 4,
+        "homes": 0,
+        "jobs": 0,
+        "food": 0,
+        "water": 70,
+        "power": 0,
+        "income": 0,
+        "happiness": 0,
+        "pollution": 0,
+        "unlockTier": 0
+      },
+      "description": "Overhead tank + hand pumps below.",
+      "def": "js/data.js BUILDINGS.watertank",
+      "art": "js/arts.js drawBuilding case 'watertank'"
     },
     {
-      "key": "substation",
-      "name": "Substation",
+      "id": "substation",
+      "title": "Substation",
+      "type": "building",
+      "kit": "seva-sadan",
       "category": "civic",
-      "cost": 7000,
-      "upkeep": 6,
-      "homes": 0,
-      "jobs": 1,
-      "food": 0,
-      "water": 0,
-      "power": 90,
-      "income": 0,
-      "happiness": 0,
-      "pollution": 0,
-      "unlockTier": 0,
-      "description": "Transformer ki gun gun — steady bijli."
+      "stats": {
+        "cost": 7000,
+        "upkeep": 6,
+        "homes": 0,
+        "jobs": 1,
+        "food": 0,
+        "water": 0,
+        "power": 90,
+        "income": 0,
+        "happiness": 0,
+        "pollution": 0,
+        "unlockTier": 0
+      },
+      "description": "Transformer ki gun gun — steady bijli.",
+      "def": "js/data.js BUILDINGS.substation",
+      "art": "js/arts.js drawBuilding case 'substation'"
     },
     {
-      "key": "solar",
-      "name": "Solar Farm",
+      "id": "solar",
+      "title": "Solar Farm",
+      "type": "building",
+      "kit": "seva-sadan",
       "category": "civic",
-      "cost": 9000,
-      "upkeep": 3,
-      "homes": 0,
-      "jobs": 0,
-      "food": 0,
-      "water": 0,
-      "power": 55,
-      "income": 0,
-      "happiness": 1,
-      "pollution": 0,
-      "unlockTier": 2,
-      "description": "Rooftop-of-the-city. Clean bijli."
+      "stats": {
+        "cost": 9000,
+        "upkeep": 3,
+        "homes": 0,
+        "jobs": 0,
+        "food": 0,
+        "water": 0,
+        "power": 55,
+        "income": 0,
+        "happiness": 1,
+        "pollution": 0,
+        "unlockTier": 2
+      },
+      "description": "Rooftop-of-the-city. Clean bijli.",
+      "def": "js/data.js BUILDINGS.solar",
+      "art": "js/arts.js drawBuilding case 'solar'"
     },
     {
-      "key": "busstand",
-      "name": "Bus Stand",
+      "id": "busstand",
+      "title": "Bus Stand",
+      "type": "building",
+      "kit": "seva-sadan",
       "category": "civic",
-      "cost": 6000,
-      "upkeep": 9,
-      "homes": 0,
-      "jobs": 4,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 0,
-      "happiness": 3,
-      "pollution": 0,
-      "unlockTier": 2,
-      "description": "Blue-red buses, conductor ki awaaz."
+      "stats": {
+        "cost": 6000,
+        "upkeep": 9,
+        "homes": 0,
+        "jobs": 4,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 0,
+        "happiness": 3,
+        "pollution": 0,
+        "unlockTier": 2
+      },
+      "description": "Blue-red buses, conductor ki awaaz.",
+      "def": "js/data.js BUILDINGS.busstand",
+      "art": "js/arts.js drawBuilding case 'busstand'"
     },
     {
-      "key": "mandir",
-      "name": "Mandir",
+      "id": "mandir",
+      "title": "Mandir",
+      "type": "building",
+      "kit": "bhakti-sthal",
       "category": "faith",
-      "cost": 3000,
-      "upkeep": 3,
-      "homes": 0,
-      "jobs": 0,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 0,
-      "happiness": 7,
-      "pollution": 0,
-      "unlockTier": 0,
-      "description": "Bells at dawn, diyas at dusk."
+      "stats": {
+        "cost": 3000,
+        "upkeep": 3,
+        "homes": 0,
+        "jobs": 0,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 0,
+        "happiness": 7,
+        "pollution": 0,
+        "unlockTier": 0
+      },
+      "description": "Bells at dawn, diyas at dusk.",
+      "knobs": {
+        "shikhara": {
+          "options": [
+            "gold",
+            "white",
+            "terracotta"
+          ]
+        }
+      },
+      "def": "js/data.js BUILDINGS.mandir",
+      "art": "js/arts.js drawBuilding case 'mandir'"
     },
     {
-      "key": "masjid",
-      "name": "Masjid",
+      "id": "masjid",
+      "title": "Masjid",
+      "type": "building",
+      "kit": "bhakti-sthal",
       "category": "faith",
-      "cost": 3000,
-      "upkeep": 3,
-      "homes": 0,
-      "jobs": 0,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 0,
-      "happiness": 7,
-      "pollution": 0,
-      "unlockTier": 0,
-      "description": "The azaan and a cool green dome."
+      "stats": {
+        "cost": 3000,
+        "upkeep": 3,
+        "homes": 0,
+        "jobs": 0,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 0,
+        "happiness": 7,
+        "pollution": 0,
+        "unlockTier": 0
+      },
+      "description": "The azaan and a cool green dome.",
+      "knobs": {
+        "dome": {
+          "options": [
+            "green",
+            "white",
+            "teal"
+          ],
+          "colors": {
+            "green": "#1b5e20",
+            "white": "#eceff1",
+            "teal": "#00897b"
+          }
+        }
+      },
+      "def": "js/data.js BUILDINGS.masjid",
+      "art": "js/arts.js drawBuilding case 'masjid'"
     },
     {
-      "key": "gurudwara",
-      "name": "Gurudwara",
+      "id": "gurudwara",
+      "title": "Gurudwara",
+      "type": "building",
+      "kit": "bhakti-sthal",
       "category": "faith",
-      "cost": 3200,
-      "upkeep": 3,
-      "homes": 0,
-      "jobs": 0,
-      "food": 8,
-      "water": 0,
-      "power": 0,
-      "income": 0,
-      "happiness": 7,
-      "pollution": 0,
-      "unlockTier": 0,
-      "description": "Langar for all — feeds the shehar daily."
+      "stats": {
+        "cost": 3200,
+        "upkeep": 3,
+        "homes": 0,
+        "jobs": 0,
+        "food": 8,
+        "water": 0,
+        "power": 0,
+        "income": 0,
+        "happiness": 7,
+        "pollution": 0,
+        "unlockTier": 0
+      },
+      "description": "Langar for all — feeds the shehar daily.",
+      "knobs": {
+        "dome": {
+          "options": [
+            "gold",
+            "copper",
+            "white"
+          ],
+          "colors": {
+            "gold": "#d4a017",
+            "copper": "#b87333",
+            "white": "#eceff1"
+          }
+        }
+      },
+      "def": "js/data.js BUILDINGS.gurudwara",
+      "art": "js/arts.js drawBuilding case 'gurudwara'"
     },
     {
-      "key": "church",
-      "name": "Church",
+      "id": "church",
+      "title": "Church",
+      "type": "building",
+      "kit": "bhakti-sthal",
       "category": "faith",
-      "cost": 3000,
-      "upkeep": 3,
-      "homes": 0,
-      "jobs": 0,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 0,
-      "happiness": 7,
-      "pollution": 0,
-      "unlockTier": 0,
-      "description": "Carols in December, quiet all year."
+      "stats": {
+        "cost": 3000,
+        "upkeep": 3,
+        "homes": 0,
+        "jobs": 0,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 0,
+        "happiness": 7,
+        "pollution": 0,
+        "unlockTier": 0
+      },
+      "description": "Carols in December, quiet all year.",
+      "def": "js/data.js BUILDINGS.church",
+      "art": "js/arts.js drawBuilding case 'church'"
     },
     {
-      "key": "park",
-      "name": "Park",
+      "id": "park",
+      "title": "Park",
+      "type": "building",
+      "kit": "maidan-jashn",
       "category": "fun",
-      "cost": 800,
-      "upkeep": 1,
-      "homes": 0,
-      "jobs": 0,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 0,
-      "happiness": 4,
-      "pollution": -1.5,
-      "unlockTier": 0,
-      "description": "Peepal tree, swings, morning walkers."
+      "stats": {
+        "cost": 800,
+        "upkeep": 1,
+        "homes": 0,
+        "jobs": 0,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 0,
+        "happiness": 4,
+        "pollution": -1.5,
+        "unlockTier": 0
+      },
+      "description": "Peepal tree, swings, morning walkers.",
+      "def": "js/data.js BUILDINGS.park",
+      "art": "js/arts.js drawBuilding case 'park'"
     },
     {
-      "key": "maidan",
-      "name": "Cricket Maidan",
+      "id": "maidan",
+      "title": "Cricket Maidan",
+      "type": "building",
+      "kit": "maidan-jashn",
       "category": "fun",
-      "cost": 1400,
-      "upkeep": 2,
-      "homes": 0,
-      "jobs": 0,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 0,
-      "happiness": 5,
-      "pollution": 0,
-      "unlockTier": 0,
-      "description": "Gully cricket. Last man batting."
+      "stats": {
+        "cost": 1400,
+        "upkeep": 2,
+        "homes": 0,
+        "jobs": 0,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 0,
+        "happiness": 5,
+        "pollution": 0,
+        "unlockTier": 0
+      },
+      "description": "Gully cricket. Last man batting.",
+      "def": "js/data.js BUILDINGS.maidan",
+      "art": "js/arts.js drawBuilding case 'maidan'"
     },
     {
-      "key": "mela",
-      "name": "Mela Ground",
+      "id": "mela",
+      "title": "Mela Ground",
+      "type": "building",
+      "kit": "maidan-jashn",
       "category": "fun",
-      "cost": 8000,
-      "upkeep": 6,
-      "homes": 0,
-      "jobs": 0,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 0,
-      "happiness": 8,
-      "pollution": 0,
-      "unlockTier": 2,
-      "description": "Ferris wheel and jalebi smoke. Festivals shine here."
+      "stats": {
+        "cost": 8000,
+        "upkeep": 6,
+        "homes": 0,
+        "jobs": 0,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 0,
+        "happiness": 8,
+        "pollution": 0,
+        "unlockTier": 2
+      },
+      "description": "Ferris wheel and jalebi smoke. Festivals shine here.",
+      "def": "js/data.js BUILDINGS.mela",
+      "art": "js/arts.js drawBuilding case 'mela'"
     },
     {
-      "key": "kiln",
-      "name": "Brick Kiln",
+      "id": "kiln",
+      "title": "Brick Kiln",
+      "type": "building",
+      "kit": "loom-mill",
       "category": "work",
-      "cost": 6000,
-      "upkeep": 6,
-      "homes": 0,
-      "jobs": 8,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 180,
-      "happiness": 0,
-      "pollution": 8,
-      "unlockTier": 2,
-      "description": "Chimney red at sunset. Keeps masons busy."
+      "stats": {
+        "cost": 6000,
+        "upkeep": 6,
+        "homes": 0,
+        "jobs": 8,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 180,
+        "happiness": 0,
+        "pollution": 8,
+        "unlockTier": 2
+      },
+      "description": "Chimney red at sunset. Keeps masons busy.",
+      "def": "js/data.js BUILDINGS.kiln",
+      "art": "js/arts.js drawBuilding case 'kiln'"
     },
     {
-      "key": "factory",
-      "name": "Small Factory",
+      "id": "factory",
+      "title": "Small Factory",
+      "type": "building",
+      "kit": "loom-mill",
       "category": "work",
-      "cost": 9000,
-      "upkeep": 10,
-      "homes": 0,
-      "jobs": 12,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 290,
-      "happiness": 0,
-      "pollution": 6,
-      "unlockTier": 2,
-      "description": "Jobs galore — bring trees to balance."
+      "stats": {
+        "cost": 9000,
+        "upkeep": 10,
+        "homes": 0,
+        "jobs": 12,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 290,
+        "happiness": 0,
+        "pollution": 6,
+        "unlockTier": 2
+      },
+      "description": "Jobs galore — bring trees to balance.",
+      "def": "js/data.js BUILDINGS.factory",
+      "art": "js/arts.js drawBuilding case 'factory'"
     },
     {
-      "key": "textile",
-      "name": "Textile Mill",
+      "id": "textile",
+      "title": "Textile Mill",
+      "type": "building",
+      "kit": "loom-mill",
       "category": "work",
-      "cost": 15000,
-      "upkeep": 16,
-      "homes": 0,
-      "jobs": 22,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 520,
-      "happiness": 0,
-      "pollution": 10,
-      "unlockTier": 3,
-      "description": "Looms clack day and night."
+      "stats": {
+        "cost": 15000,
+        "upkeep": 16,
+        "homes": 0,
+        "jobs": 22,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 520,
+        "happiness": 0,
+        "pollution": 10,
+        "unlockTier": 3
+      },
+      "description": "Looms clack day and night.",
+      "def": "js/data.js BUILDINGS.textile",
+      "art": "js/arts.js drawBuilding case 'textile'"
     },
     {
-      "key": "road",
-      "name": "Road",
+      "id": "road",
+      "title": "Road",
+      "type": "prop",
+      "kit": "gully-sajja",
       "category": "decor",
-      "cost": 60,
-      "upkeep": 0,
-      "homes": 0,
-      "jobs": 0,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 0,
-      "happiness": 0,
-      "pollution": 0,
-      "unlockTier": 0,
-      "description": "Autos, cows and cricket all share it."
+      "stats": {
+        "cost": 60,
+        "upkeep": 0,
+        "homes": 0,
+        "jobs": 0,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 0,
+        "happiness": 0,
+        "pollution": 0,
+        "unlockTier": 0
+      },
+      "description": "Autos, cows and cricket all share it.",
+      "def": "js/data.js BUILDINGS.road",
+      "art": "js/arts.js drawBuilding case 'road'"
     },
     {
-      "key": "bridge",
-      "name": "Bridge",
+      "id": "bridge",
+      "title": "Bridge",
+      "type": "prop",
+      "kit": "gully-sajja",
       "category": "decor",
-      "cost": 350,
-      "upkeep": 0,
-      "homes": 0,
-      "jobs": 0,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 0,
-      "happiness": 0,
-      "pollution": 0,
-      "unlockTier": 0,
-      "description": "Crosses water. Also the best adda at sunset."
+      "stats": {
+        "cost": 350,
+        "upkeep": 0,
+        "homes": 0,
+        "jobs": 0,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 0,
+        "happiness": 0,
+        "pollution": 0,
+        "unlockTier": 0
+      },
+      "description": "Crosses water. Also the best adda at sunset.",
+      "def": "js/data.js BUILDINGS.bridge",
+      "art": "js/arts.js drawBuilding case 'bridge'"
     },
     {
-      "key": "tree",
-      "name": "Neem Tree",
+      "id": "tree",
+      "title": "Neem Tree",
+      "type": "nature",
+      "kit": "gully-sajja",
       "category": "decor",
-      "cost": 80,
-      "upkeep": 0,
-      "homes": 0,
-      "jobs": 0,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 0,
-      "happiness": 1,
-      "pollution": -0.6,
-      "unlockTier": 0,
-      "description": "Shade, clean air, and evening charcha."
+      "stats": {
+        "cost": 80,
+        "upkeep": 0,
+        "homes": 0,
+        "jobs": 0,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 0,
+        "happiness": 1,
+        "pollution": -0.6,
+        "unlockTier": 0
+      },
+      "description": "Shade, clean air, and evening charcha.",
+      "def": "js/data.js BUILDINGS.tree",
+      "art": "js/arts.js drawBuilding case 'tree'"
     },
     {
-      "key": "lamp",
-      "name": "Street Lamp",
+      "id": "lamp",
+      "title": "Street Lamp",
+      "type": "prop",
+      "kit": "gully-sajja",
       "category": "decor",
-      "cost": 140,
-      "upkeep": 0,
-      "homes": 0,
-      "jobs": 0,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 0,
-      "happiness": 1,
-      "pollution": 0,
-      "unlockTier": 0,
-      "description": "Solar lamp — glows at night."
+      "stats": {
+        "cost": 140,
+        "upkeep": 0,
+        "homes": 0,
+        "jobs": 0,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 0,
+        "happiness": 1,
+        "pollution": 0,
+        "unlockTier": 0
+      },
+      "description": "Solar lamp — glows at night.",
+      "def": "js/data.js BUILDINGS.lamp",
+      "art": "js/arts.js drawBuilding case 'lamp'"
     },
     {
-      "key": "flag",
-      "name": "Flag Post",
+      "id": "flag",
+      "title": "Flag Post",
+      "type": "prop",
+      "kit": "gully-sajja",
       "category": "decor",
-      "cost": 200,
-      "upkeep": 0,
-      "homes": 0,
-      "jobs": 0,
-      "food": 0,
-      "water": 0,
-      "power": 0,
-      "income": 0,
-      "happiness": 2,
-      "pollution": 0,
-      "unlockTier": 0,
-      "description": "Tiranga on top. Pride every day."
+      "stats": {
+        "cost": 200,
+        "upkeep": 0,
+        "homes": 0,
+        "jobs": 0,
+        "food": 0,
+        "water": 0,
+        "power": 0,
+        "income": 0,
+        "happiness": 2,
+        "pollution": 0,
+        "unlockTier": 0
+      },
+      "description": "Tiranga on top. Pride every day.",
+      "def": "js/data.js BUILDINGS.flag",
+      "art": "js/arts.js drawBuilding case 'flag'"
     }
   ],
   "residents": [
     {
-      "name": "Aarav Sharma",
+      "name": "[NPC] Ramu",
       "home": "17,18",
       "shop": null,
       "deedSource": "code"
     },
     {
-      "name": "Meera Sharma",
+      "name": "[NPC] Meera",
       "home": "19,18",
       "shop": null,
       "deedSource": "code"
     },
     {
-      "name": "Chacha Ramu",
+      "name": "[NPC] Arjun",
       "home": "18,17",
       "shop": null,
       "deedSource": "code"
     },
     {
-      "name": "Priya Verma",
-      "home": null,
-      "shop": null,
-      "deedSource": "in-game"
-    },
-    {
-      "name": "Imran Qureshi",
-      "home": null,
-      "shop": null,
-      "deedSource": "in-game"
-    },
-    {
-      "name": "Simran Kaur",
-      "home": null,
-      "shop": null,
-      "deedSource": "in-game"
-    },
-    {
-      "name": "Joseph DSouza",
-      "home": null,
-      "shop": null,
-      "deedSource": "in-game"
-    },
-    {
-      "name": "Lakshmi Nair",
-      "home": null,
-      "shop": null,
-      "deedSource": "in-game"
-    },
-    {
-      "name": "Ravi Patel",
-      "home": null,
-      "shop": null,
-      "deedSource": "in-game"
-    },
-    {
-      "name": "Ananya Iyer",
-      "home": null,
-      "shop": null,
-      "deedSource": "in-game"
-    },
-    {
-      "name": "Vikram Singh",
-      "home": null,
-      "shop": null,
-      "deedSource": "in-game"
-    },
-    {
-      "name": "Fatima Sheikh",
-      "home": null,
-      "shop": null,
-      "deedSource": "in-game"
-    },
-    {
-      "name": "Deepak Yadav",
-      "home": null,
-      "shop": null,
-      "deedSource": "in-game"
-    },
-    {
-      "name": "Zoya Khan",
+      "name": "[NPC] Zoya",
       "home": null,
       "shop": null,
       "deedSource": "in-game"
@@ -832,17 +1265,17 @@
   ],
   "deeds": [
     {
-      "name": "Aarav Sharma",
+      "name": "[NPC] Ramu",
       "home": "17,18",
       "fromCode": true
     },
     {
-      "name": "Meera Sharma",
+      "name": "[NPC] Meera",
       "home": "19,18",
       "fromCode": true
     },
     {
-      "name": "Chacha Ramu",
+      "name": "[NPC] Arjun",
       "home": "18,17",
       "fromCode": true
     }
@@ -951,7 +1384,9 @@
   ],
   "howToExtend": {
     "addBuilding": "js/data.js BUILDINGS + one draw case in js/arts.js",
-    "addResident": "js/owners.js RESIDENTS",
-    "assignDeed": "js/owners.js ASSIGNMENTS (tiles as \"x,y\")"
+    "addResident": "js/owners.js RESIDENTS (max 4, keep the [NPC] tag)",
+    "assignDeed": "js/owners.js ASSIGNMENTS (tiles as \"x,y\")",
+    "pinKnob": "place(x, y, key, { knobs: { <knob>: <option> } }) — see KNOBS in js/data.js",
+    "regenerate": "node scripts/catalog.mjs"
   }
 }

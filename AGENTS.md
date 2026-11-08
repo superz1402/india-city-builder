@@ -106,6 +106,12 @@ See the architecture tree in `README.md`. Conventions:
   **Adopted:** the content-catalog pattern — `scripts/catalog.mjs` generates
   `catalog.json` (buildings, residents, deeds, festivals, tiers) from the
   code-side registries so tools/owners consume the city without parsing JS.
+  **Adopted (v3):** the polyfork SCHEMA and the parametric-knob idea —
+  `catalog.json` v3 uses `site/licence/api/kits[]/assets[]`; `KNOBS`
+  (js/data.js) gives 14 buildings named options resolved deterministically
+  from the plot seed ("a model is a program"); `place(x,y,key,{knobs})`
+  pins one per tile and persists in save v2; `llms.txt` is the agent-facing
+  API doc.
   **Kit discipline:** new buildings/residents must stay coherent with the
   existing palette/scale/seed-variant system (see data.js + arts.js).
 - **buildacountry (the play-pattern reference, cloned & read line-by-line):**
