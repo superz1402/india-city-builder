@@ -53,6 +53,10 @@ So the deed book ships exactly **four** citizens, each named with a literal
 pretend people in the world. Anyone can be added in code — keep the `[NPC]`
 tag so visitors never mistake scripted residents for real players.
 
+## v5 deviation — TRUE FIRST PERSON (owner directive, issue #23)
+
+> "I need first person view meaning the person walking in city should be me"
+
 ## v5 — TRUE first person (issue #23, deliberate deviation from buildacountry)
 
 buildacountry's walker is a third-person puppet in the isometric scene. The
@@ -77,3 +81,4 @@ avatar:
 - The old third-person buildacountry parity notes above still describe the
   movement *rules* (speeds, collision R=0.24, emote rate-limit, 4-NPC cap);
   only the camera and renderer changed.
+
