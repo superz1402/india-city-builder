@@ -12,7 +12,7 @@ import { seasonOf } from './sim.js';
 import { istLabel, rushLevel } from './clock.js';
 import { isLensOn, setLensOn } from './tiltshift.js';
 import { centerOn, setZoom, orbitBy } from './iso.js';
-import { walkActive, enterWalk, exitWalk, doEmote, setJoystick, setRun, nearbyCount, getPlayer, teleportTo } from './walk.js';
+import { walkActive, enterWalk, exitWalk, doEmote, setJoystick, setRun, nearbyCount, getPlayer, teleportTo, getView } from './walk.js';
 import { RESIDENTS, residentList, ownersAt, assignDeed, vacateDeed, homeOf, shopOf, statusOf, deedFor } from './owners.js';
 
 const $ = (id) => document.getElementById(id);
@@ -169,14 +169,18 @@ export function tick() {
     const txt = n > 0 ? `You + ${n} nearby` : 'Just you here';
     const chip = $('walk-chip');
     if (chip.textContent !== txt) chip.textContent = txt;
-    // where-am-I chip — the district you are walking through (first person)
+    // where-am-I chip — district + compass heading (you are the camera)
     const p0 = getPlayer();
     const where = $('walk-where');
     if (where) {
-      const dtxt = districtOf(Math.floor(p0.x), Math.floor(p0.y));
+      const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+      const yaw = ((getView().yaw % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+      const c = dirs[Math.round(yaw / (Math.PI / 4)) % 8];
+      const dtxt = `${districtOf(Math.floor(p0.x), Math.floor(p0.y))} · ${c}`;
       if (where.textContent !== dtxt) where.textContent = dtxt;
       where.hidden = false;
     }
+    drawWalkMap();
     // nearest deed chip (reference walkNear: whose home am I passing?)
     updateWalkNear();
   } else {
