@@ -65,3 +65,13 @@ what was pushed and to which commit. Agents: read this first (see AGENTS.md §1)
   `health.yml` CI (syntax + files + secret guard) active.
 - Pushed: full game, README with live screenshots, AGENTS.md operating
   manual (session persistence + issue workflow), this worklog, LICENSE (MIT).
+
+## 2026-11-08 — ops addendum (same session, second push)
+
+- Repo created and board filed: issues #1–#12; #1–#10 closed by the v1.0
+  feature commit `dc614a2`; #11/#12 closed with evidence after ops landed.
+- GitHub Pages enabled (main / root): first build succeeded (`built`,
+  error: none). Live URL: https://superz1402.github.io/india-city-builder/
+- Post-deploy browser verification on the LIVE URL: boot → Start → build
+  menu tabs render, zero page errors (qa10-live.png in session log).
+- health.yml triggered on push; keep it green (see AGENTS.md §3).
