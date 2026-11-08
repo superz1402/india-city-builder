@@ -71,10 +71,13 @@ The build menu, thumbnails, economy and unlock tiers pick it up automatically.
 
 **2. Add a resident / give them a home or shop — `js/owners.js`**
 
+The city keeps fake humans deliberately tiny — **four [NPC]-tagged residents**
+(owner rule: "don't add fake humans, 4 is enough, bracket-name them npc").
+
 ```js
-export const RESIDENTS = ['Aarav Sharma', 'Meera Sharma' /* add names */];
+export const RESIDENTS = ['[NPC] Ramu', '[NPC] Meera' /* keep the [NPC] tag */];
 export const ASSIGNMENTS = [
-  { name: 'Aarav Sharma', home: '17,18', shop: '20,14' },  // tiles as "x,y"
+  { name: '[NPC] Ramu', home: '17,18', shop: '20,14' },  // tiles as "x,y"
 ];
 ```
 

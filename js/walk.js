@@ -1,7 +1,8 @@
 // walk.js — street-level "wander" mode (v2 rehaul, mirrors buildacountry).
-// You control a walker: WASD/arrow keys or the on-screen joystick, Shift to
-// run, drag to look around, emotes with keys 1-4. Named residents from the
-// deed book (owners.js) walk their own lives on the real IST clock.
+// You control THE one walker: WASD/arrow keys or the on-screen joystick,
+// Shift to run, drag to look around, emotes with keys 1-4. Only FOUR fake
+// humans share the street — the [NPC] residents of the deed book (owners.js),
+// each tagged in their name so they read as pretend, not players.
 
 import { S, MAP, isWalkable, nearestWalkable, gridAt } from './state.js';
 import { cam, setZoom, isoOf, orbitBy } from './iso.js';
@@ -18,11 +19,12 @@ export const player = {
 
 // named residents walking the streets (spawned for walk mode)
 const walkers = [];
+// one outfit per NPC (4 citizens, matching owners.js — never more)
 const walkerOutfits = [
-  { type: 'saree', col: '#d81b60', skin: 2 }, { type: 'kurta', col: '#ffd54f', skin: 0 },
-  { type: 'salwar', col: '#4dd0e1', skin: 1 }, { type: 'turban', col: '#1565c0', skin: 3 },
-  { type: 'dhoti', col: '#fafafa', skin: 2 }, { type: 'lungi', col: '#33691e', skin: 0 },
-  { type: 'saree', col: '#7b1fa2', skin: 1 }, { type: 'kurta', col: '#a5d6a7', skin: 2 },
+  { type: 'kurta', col: '#ffd54f', skin: 0 },   // [NPC] Ramu
+  { type: 'saree', col: '#d81b60', skin: 2 },   // [NPC] Meera
+  { type: 'turban', col: '#1565c0', skin: 3 },  // [NPC] Arjun
+  { type: 'salwar', col: '#4dd0e1', skin: 1 },  // [NPC] Zoya
 ];
 
 const keys = Object.create(null);
@@ -108,8 +110,11 @@ export function setRun(on) { runToggle = !!on; syncWalkButtons(); }
 export function isRunning() { return runToggle || !!keys.ShiftLeft || !!keys.ShiftRight; }
 export function doEmote(kind) {
   if (!walkActive() || !EMOTES.includes(kind)) return;
+  const t = performance.now() / 1000;
+  if (t - (doEmote.last || 0) < 1.5) return; // reference parity: waves rate-limit to one per 1.5s
+  doEmote.last = t;
   player.emote = kind;
-  player.emoteUntil = performance.now() / 1000 + 2.4;
+  player.emoteUntil = t + 2.4;
   // nearby residents sometimes answer back
   for (const w of walkers) {
     if (w.emote) continue;

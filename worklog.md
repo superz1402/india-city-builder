@@ -154,3 +154,53 @@ in Apna Shehar with Indian identity.
 
 **Pushed:** commit `366d3fa` (v2 feature work) + this worklog/ops commit.
 **Live:** https://superz1402.github.io/india-city-builder/ (Pages rebuilds on push).
+
+## 2026-11-09 — One-person view parity + 4-NPC cap (owner directive) by Z.ai agent session
+
+**Owner directives this task:**
+- "Use rea GitHub to clone how the one person view is used" → cloned the REAL
+  reference source `buildacountry/buildacountry.github.io` (one ~472 KB
+  index.html; lives outside the repo at /home/z/my-project/reference/) and
+  reverse-engineered its walk system line-by-line. Distilled into
+  **docs/WALK-REFERENCE.md** (WALK state machine, 0.5 m collision grid,
+  4-corner+centre freeAt, axis-separated sliding, camera pull-in, joystick
+  0.62R knob, drag-look 0.008/0.005, emote set 👋🎉🪔❤️ with 1.5 s rate
+  limit, HUD structure, exact toast copy, "Just you here" chip).
+- "Don't add fake humans — 4 is enough, bracket naming them npc" →
+  owners.js RESIDENTS cut from 14 named people to exactly FOUR: [NPC] Ramu
+  (17,18), [NPC] Meera (19,18), [NPC] Arjun (18,17), [NPC] Zoya (visitor,
+  no deed). walkerOutfits trimmed 8→4 (one per NPC). DEEDS_KEY bumped
+  v1→v2 so retired names can't ghost from old localStorage.
+
+**Applied from the reference (parity):**
+- walk.js: emote rate limit 1.5 s (reference lastEmoji rule); header docs.
+- ui.js: NEW nearest-deed chip `#walk-near` (reference #walkNear) —
+  "🏠 [NPC] Ramu's home / 🏪 …'s shop / 🏚️ … — vacant plot" within 6 tiles,
+  refreshed on the 220 ms ui tick; enter-walk toast copy now matches the
+  reference verbatim (phone vs desktop variants).
+- index.html: `#walk-near` element; help text now explains the 4-NPC rule.
+- style.css: `.walk-near` pill (bottom-centre desktop, above-joystick on
+  ≤719px); RUN + 4 emotes wrap onto two 48px rows on phones (5×48px
+  out-widthed 390px and collided with the joystick — found in QA);
+  `body.walking .feed` and `.festival-banner` drop below the walk chip row
+  so notices/Diwali banner never sit behind "You + N nearby".
+
+**QA (agent-browser, zero console errors):**
+- Desktop 1280×800: enter walk → dark sky at 11:49 pm IST ✓; "You + 4
+  nearby" ✓; all four [NPC] tags visible ✓; walk-near chip ✓; WASD keydown
+  1 s moves the player up-gully, camera follows ✓; Exit walk restores plan
+  mode (build bar + search return, walkers cleared) ✓.
+- Mobile 390×844 (iPhone 14): "You + 3 nearby", joystick + 5-button cluster
+  fits with no joystick collision after the wrap fix; walk-near floats clear;
+  Diwali banner (live today) below chips ✓.
+- Deed book: exactly 4 rows; stale v1 entry ("Aarav Sharma") seeded into
+  localStorage did NOT ghost after reload ✓. Search "ramu" → [NPC] Ramu →
+  "Showing [NPC] Ramu's home" ✓.
+
+**Ops:** new token configured per AGENTS.md §9 (remote URL only; AUTH-OK via
+ls-remote). Owner reminder: token was pasted in chat 2026-11-09 — ROTATE it.
+AGENTS.md gains §6 buildacountry pointer + §10 owner directives; README deed
+examples use [NPC] names now.
+
+**Pushed:** this task's commit (see git log — "walk-view parity + 4-NPC cap").
+**Live:** https://superz1402.github.io/india-city-builder/

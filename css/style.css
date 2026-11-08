@@ -375,6 +375,10 @@ body.walking #search-wrap { display: none; }   /* the street has no search bar; 
 body.walking #walk-hud { display: block; }
 body.walking #buildbar, body.walking .cam, body.walking #tool-chip { display: none; }
 body.walking #game { cursor: grab; }
+/* notices slide under the walk chip row, never behind it */
+body.walking .feed { top: calc(var(--hud-h) + env(safe-area-inset-top) + 58px); }
+/* the festival banner moves down too — the walk chips own the top row */
+body.walking .festival-banner { top: calc(var(--hud-h) + env(safe-area-inset-top) + 58px); }
 
 .walk-top {
   position: fixed; z-index: 31;
@@ -387,6 +391,22 @@ body.walking #game { cursor: grab; }
   border-radius: 999px; padding: 7px 14px;
   font: 600 13px system-ui, sans-serif; color: var(--ink);
   box-shadow: 0 2px 10px rgba(36,28,18,.10);
+}
+.walk-near {
+  position: fixed; z-index: 31;
+  left: 50%; transform: translateX(-50%);
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  max-width: min(60vw, 380px); overflow: hidden;
+  white-space: nowrap; text-overflow: ellipsis;
+  background: var(--chrome); border: 1px solid var(--chrome-edge);
+  border-radius: 999px; padding: 8px 15px;
+  font: 600 13px system-ui, sans-serif; color: var(--ink);
+  box-shadow: 0 2px 10px rgba(36,28,18,.10);
+  pointer-events: none;
+}
+@media (max-width: 719px) {
+  /* thumb zone is busy on phones — the deed chip floats above the joystick */
+  .walk-near { bottom: calc(176px + env(safe-area-inset-bottom)); max-width: 78vw; }
 }
 
 .joy {
@@ -434,6 +454,7 @@ body.walking #game { cursor: grab; }
 @media (max-width: 719px) {
   .joy { width: 118px; height: 118px; }
   .emote-btn { width: 48px; height: 48px; }
-  .walk-right { gap: 8px; }
+  /* five 48px buttons out-width a phone, so RUN wraps onto its own row */
+  .walk-right { gap: 8px; flex-wrap: wrap; width: 216px; justify-content: flex-end; row-gap: 10px; }
   .pill-btn { padding: 0 13px; font-size: 13px; }
 }

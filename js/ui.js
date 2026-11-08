@@ -167,6 +167,8 @@ export function tick() {
     const txt = n > 0 ? `You + ${n} nearby` : 'Just you here';
     const chip = $('walk-chip');
     if (chip.textContent !== txt) chip.textContent = txt;
+    // nearest deed chip (reference walkNear: whose home am I passing?)
+    updateWalkNear();
   }
 
   // festival banner
@@ -204,6 +206,31 @@ export function tick() {
     buildMenu();
     setTool(tool, { silent: true });
   }
+}
+
+// whose deed is nearest while you walk — the reference shows "@user's home"
+// when you pass within a few metres; we do the same with [NPC] deeds.
+function updateWalkNear() {
+  const el = $('walk-near');
+  if (!el) return;
+  const p = getPlayer();
+  let best = null, bd = 6;
+  for (const r of residentList()) {
+    for (const kind of ['home', 'shop']) {
+      const s = r[kind];
+      if (!s) continue;
+      const [tx, ty] = s.split(',').map(Number);
+      const d = Math.hypot(tx + 0.5 - p.x, ty + 0.5 - p.y);
+      if (d < bd) { bd = d; best = { name: r.name, kind, tx, ty }; }
+    }
+  }
+  if (!best) { el.hidden = true; return; }
+  const g = S.grid[best.ty] && S.grid[best.ty][best.tx];
+  const icon = g ? (best.kind === 'home' ? '🏠' : '🏪') : '🏚️';
+  const tail = g ? '' : ' — vacant plot';
+  const txt = `${icon} ${best.name}'s ${best.kind}${tail}`;
+  if (el.textContent !== txt) el.textContent = txt;
+  el.hidden = false;
 }
 
 // ---------- tile info ----------
@@ -332,7 +359,7 @@ function fillDeeds() {
     const shop = r.shop ? `<button class="chip" data-visit="${r.shop}" data-label="${r.name}'s shop">Shop · ${r.shop}</button>` : '';
     return `<div class="deed-row"><div class="deed-who"><b>${r.name}</b><small>${statusOf(r.name)}</small></div><div class="deed-chips">${home}${shop}</div></div>`;
   }).join('');
-  body.innerHTML = rows + `<p class="panel-foot">Tap a chip to visit. Assign deeds from any home or shop tile. Add residents in code: <b>js/owners.js</b>.</p>`;
+  body.innerHTML = rows + `<p class="panel-foot">Tap a chip to visit. Four fake humans ([NPC]) live here by design — edit them in code: <b>js/owners.js</b>.</p>`;
 }
 
 // ---------- visit (metaverse teleport) ----------
@@ -416,7 +443,8 @@ function initWalkControls() {
   $('btn-walk').addEventListener('click', () => {
     sfx.click();
     enterWalk();
-    pushNotice('You are on the street. WASD / arrows or the joystick to walk, drag to look around, Shift (or RUN) to run.', 'good');
+    const phone = matchMedia('(pointer: coarse)').matches || window.innerWidth < 720;
+    pushNotice(phone ? 'Use the joystick to walk. Drag anywhere to look around.' : 'WASD or arrow keys to walk, Shift to run. Drag to look around.', 'good');
   });
   $('btn-exit-walk').addEventListener('click', () => { sfx.click(); exitWalk(); });
   $('btn-run').addEventListener('click', () => {

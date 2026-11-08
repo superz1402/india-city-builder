@@ -5,13 +5,19 @@
 //  CITY OWNER'S GUIDE — this is the file you edit to give people property.
 // ═══════════════════════════════════════════════════════════════════════
 //
-// 1) ADD A PERSON: append a name to RESIDENTS below.
+//  ABOUT FAKE HUMANS (NPCs): the city keeps the pretend crowd small on
+//  purpose — FOUR named NPCs, each tagged with a [NPC] bracket so nobody
+//  mistakes them for real people. The reference city (buildacountry) does
+//  the same: one real walker (you), a few citizens, everyone else is
+//  scenery. Keep it that way unless the owner asks otherwise.
+//
+// 1) ADD A PERSON: append a name to RESIDENTS below (use the [NPC] tag).
 // 2) GIVE THEM A HOME / SHOP: add a line to ASSIGNMENTS with the tile as
 //    "x,y" (column x, row y on the 36×36 map — tap any building in game
 //    to see its tile in the info card).
 //
 //      export const ASSIGNMENTS = [
-//        { name: 'Aarav Sharma', home: '17,18', shop: '22,15' },
+//        { name: '[NPC] Aarav', home: '17,18', shop: '22,15' },
 //      ];
 //
 //  • `home` / `shop` are optional — a person can have both, either, or none
@@ -31,33 +37,27 @@ import { S, MAP, gridAt } from './state.js';
 import { BUILDINGS } from './data.js';
 import { dayPhase } from './clock.js';
 
-const DEEDS_KEY = 'apna-shehar-deeds-v1';
+// v2: deed names changed to [NPC] names, so the old key is retired — stale
+// in-game assignments for retired names must never ghost into the book.
+const DEEDS_KEY = 'apna-shehar-deeds-v2';
 
-// The people of the shehar. Add anyone you like — they will start wandering
-// the streets, visiting their properties, and appearing in search.
+// The people of the shehar. FOUR fake humans max (owner rule: "don't add
+// fake humans — 4 is enough, bracket-name them npc"). Each starts outside
+// their home tile, wanders the gullies, and appears in search.
 export const RESIDENTS = [
-  'Aarav Sharma',
-  'Meera Sharma',
-  'Chacha Ramu',
-  'Priya Verma',
-  'Imran Qureshi',
-  'Simran Kaur',
-  'Joseph DSouza',
-  'Lakshmi Nair',
-  'Ravi Patel',
-  'Ananya Iyer',
-  'Vikram Singh',
-  'Fatima Sheikh',
-  'Deepak Yadav',
-  'Zoya Khan',
+  '[NPC] Ramu',
+  '[NPC] Meera',
+  '[NPC] Arjun',
+  '[NPC] Zoya',
 ];
 
 // Code-side deeds (see guide above). The starter hamlet sits at the centre:
 // jhuggi (17,18), jhuggi (19,18), kaccha ghar (18,17).
+// Zoya owns nothing yet — she strolls the bazaar as a visitor.
 export const ASSIGNMENTS = [
-  { name: 'Aarav Sharma', home: '17,18' },
-  { name: 'Meera Sharma', home: '19,18' },
-  { name: 'Chacha Ramu', home: '18,17' },
+  { name: '[NPC] Ramu', home: '17,18' },
+  { name: '[NPC] Meera', home: '19,18' },
+  { name: '[NPC] Arjun', home: '18,17' },
 ];
 
 // ---------- merged deed list (code + in-game) ----------

@@ -108,6 +108,12 @@ See the architecture tree in `README.md`. Conventions:
   code-side registries so tools/owners consume the city without parsing JS.
   **Kit discipline:** new buildings/residents must stay coherent with the
   existing palette/scale/seed-variant system (see data.js + arts.js).
+- **buildacountry (the play-pattern reference, cloned & read line-by-line):**
+  `buildacountry/buildacountry.github.io` — the whole game is one ~472 KB
+  `index.html`. The one-person view (WALK state, collision grid, camera,
+  joystick, emotes, HUD copy) is documented with numbers in
+  `docs/WALK-REFERENCE.md`. Read it BEFORE touching walk.js / ui.js walk
+  parts; keep behaviour and copy in parity with it.
 
 ## 7. Definition of done
 
@@ -169,3 +175,19 @@ owner's guide and `README.md` for the code-side building guide.
 Building upgrade levels, policies (tax slider, night curfew), train station +
 tracks, save export codes, Hindi-first i18n toggle, PWA offline mode,
 auto-tour camera (reference-style).
+
+## 10. Owner directives (Nov 2026 rehaul addendum)
+
+1. **Fake humans are capped at FOUR, bracket-named.** `RESIDENTS` ships
+   exactly `[NPC] Ramu / [NPC] Meera / [NPC] Arjun / [NPC] Zoya` — the `[NPC]`
+   tag is part of the name so no visitor mistakes scripted people for real
+   players. Do not add more residents unless the owner asks; if they do, keep
+   the `[NPC]` prefix. (Deed-storage note: resident-name changes require
+   bumping `DEEDS_KEY` in owners.js so stale localStorage deeds never ghost.)
+2. **One-person view = the real buildacountry source, not a guess.** The
+   reference repo is cloned and reverse-engineered ("use rea GitHub to clone
+   how the one person view is used"); the distillation lives in
+   `docs/WALK-REFERENCE.md` (state machine, numbers, HUD structure, copy).
+   Match it when touching walk mode; record deviations with reasons.
+3. **Tokens:** see §9 — remote URL only, rotate after chat exposure.
+   The current token was pasted in chat on 2026-11-09 and must be rotated.
