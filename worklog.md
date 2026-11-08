@@ -574,3 +574,55 @@ half-wired render.js; (2) for parallel tasks, claim a `git worktree` first;
 (3) `git apply --3way` can silently drop worktree changes when the shared
 repo is hot — blob-verify every file (`git show HEAD:file | md5sum`) before
 committing.
+
+## 2026-11-09 ~23:15 IST — Issue #25 closed: FPV black-wall parser bug + daytime loop crash + lens default (Z.ai session)
+
+Owner reported (phone, Chrome): viewer mode fine, but in walk mode "drag is
+changing the land too it's not fixed to its place", plus "visuals should look
+like this (buildacountry screenshots) and smoothest rendering". Investigation
+found THREE real defects under those symptoms — none of them were the camera:
+
+1. **Black walls all day (the visual killer).** palette.js shade() parsed only
+   `#rrggbb` via `parseInt(hex.slice(1),16)`; fpv.js drawWall feeds it the
+   output of mix()/warmCol(), which return `rgb(r,g,b)` strings → NaN → every
+   wall fill collapsed to rgb(0,0,0). warmCol() returns an rgb() string
+   whenever dl.warm > 0.04 (~9:00–17:00 IST), so walls were black ALL DAY and
+   plausible dark navy only at deep night, which hid it from night QA. Fix:
+   shade() now routes through the shared parseCol() (hex, rgb(), empty). One
+   parser for every colour shape the codebase produces. Commit 4414641.
+2. **Daytime loop crash.** agents.js update() reassigned const bindings in the
+   rush-hour burst paths (`s` at gap>10, `idx` at overshoot>12) → TypeError
+   "Assignment to constant variable" → the rAF loop halted with "The city
+   failed to load" and a frozen frame. The window only opens in daytime rush
+   (wantVehicles scales with rushLevel faster than the fleet refills), so
+   deep-night QA sessions never tripped it. Both const → let. Commit b663437.
+3. **Lens cost on phones.** The tilt-shift lens (two masked blur pipelines)
+   measured ~2.75× per frame (walk: 8 fps lens-on vs 22 lens-off under
+   SwiftShader). It defaulted ON everywhere. Now: default OFF on
+   coarse-pointer/hover-none devices, ON on desktop; explicit toggle
+   (apna-shehar-lens-v1) always wins. Emulated-phone walk FPS 8 → 20.
+   Commit b663437.
+
+Verification (headless Chrome, no-store server, clock stubbed to real IST):
+day walk at 15:00 renders palette-coloured walls with **0 rgb(0,0,0) fills
+across 36,607 fills**; 240px drag pivots the view (CBD·S → CBD·SW) with the
+world anchored — no land pan; night walk 21:30 keeps stars/lit windows/lamps;
+plan mode unchanged after the roundtrip. Evidence committed:
+docs/qa-issue25-{blackwalls-before,crash-panel,day-walk-fixed,night-walk-fixed,
+plan-intact}.png. Issue #25 closed with a full comment.
+
+**Parallel-session note:** while this fix was in flight, another session was
+actively rewriting walk/fpv/iso/ui/index/style in the shared worktree
+(buildacountry-style third-person orbit camera, "city stays anchored" copy).
+This session committed ONLY its own files (palette.js, agents.js,
+tiltshift.js + docs) — never touched theirs — and verified everything against
+a clean `git worktree` checkout of HEAD (served on :8767) instead of the hot
+shared tree. That worktree-isolation trick is the reliable way to verify your
+own push while the shared tree is mid-edit.
+
+Lesson: when a rendering defect "moves with the camera", census the actual
+canvas fills (hook fillStyle, count per colour) before theorising — the stack
+trace of one rgb(0,0,0) fill located the bug in minutes after an hour of
+looking at the wrong layer. And: runtime crashes can hide behind time-of-day —
+QA must sweep at least dawn/day/dusk/night, not just the hour you happen to
+be in.
