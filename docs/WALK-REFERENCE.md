@@ -52,3 +52,28 @@ So the deed book ships exactly **four** citizens, each named with a literal
 `owners.js → RESIDENTS`, walk with the same body renderer, and are the only
 pretend people in the world. Anyone can be added in code — keep the `[NPC]`
 tag so visitors never mistake scripted residents for real players.
+
+## v5 — TRUE first person (issue #23, deliberate deviation from buildacountry)
+
+buildacountry's walker is a third-person puppet in the isometric scene. The
+owner's directive for v5 is explicit: *"the person walking in city should be
+me."* Walk mode is therefore a **true first-person camera**, not a followed
+avatar:
+
+- **No body, no "You" tag.** `walk.js → view` IS the camera (x, y, yaw, pitch,
+  head-bob). `render.js` hands walk mode entirely to `fpv.js`, a perspective
+  projection renderer — buildings as sun-lit boxes with rooflines, kerbed
+  roads with lane dashes and zebra crossings, billboards for trees and the
+  four [NPC]s, rush-hour traffic you share the road with.
+- **Looking**: drag anywhere to turn your head, or click the street to lock
+  the mouse (Esc releases). Q/E or left/right arrows turn; WASD/joystick
+  moves relative to where you face; Shift runs.
+- **Orientation aids** (you have no body to anchor to): a marigold heading
+  chevron on the ground ahead of you, a district + compass chip (top), and a
+  pocket map with your heading arrow (top right; bottom right on phones).
+- **Doors still talk**: hanging ACQUIRED nameplates and quiet TO-LET cards
+  appear on doors within ~4.5 tiles (plate discipline — the street stays
+  clean; the plan map keeps its doorstep dots).
+- The old third-person buildacountry parity notes above still describe the
+  movement *rules* (speeds, collision R=0.24, emote rate-limit, 4-NPC cap);
+  only the camera and renderer changed.

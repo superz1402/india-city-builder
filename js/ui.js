@@ -12,7 +12,7 @@ import { seasonOf } from './sim.js';
 import { istLabel, rushLevel } from './clock.js';
 import { isLensOn, setLensOn } from './tiltshift.js';
 import { centerOn, setZoom, orbitBy } from './iso.js';
-import { walkActive, enterWalk, exitWalk, doEmote, setJoystick, setRun, nearbyCount, getPlayer, teleportTo } from './walk.js';
+import { walkActive, enterWalk, exitWalk, doEmote, setJoystick, setRun, nearbyCount, getPlayer, teleportTo, getView, getWalkers } from './walk.js';
 import { RESIDENTS, residentList, ownersAt, assignDeed, vacateDeed, homeOf, shopOf, statusOf, deedFor } from './owners.js';
 
 const $ = (id) => document.getElementById(id);
@@ -169,14 +169,18 @@ export function tick() {
     const txt = n > 0 ? `You + ${n} nearby` : 'Just you here';
     const chip = $('walk-chip');
     if (chip.textContent !== txt) chip.textContent = txt;
-    // where-am-I chip — the district you are walking through (first person)
+    // where-am-I chip — district + compass heading (you are the camera)
     const p0 = getPlayer();
     const where = $('walk-where');
     if (where) {
-      const dtxt = districtOf(Math.floor(p0.x), Math.floor(p0.y));
+      const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+      const yaw = ((getView().yaw % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+      const c = dirs[Math.round(yaw / (Math.PI / 4)) % 8];
+      const dtxt = `${districtOf(Math.floor(p0.x), Math.floor(p0.y))} · ${c}`;
       if (where.textContent !== dtxt) where.textContent = dtxt;
       where.hidden = false;
     }
+    drawWalkMap();
     // nearest deed chip (reference walkNear: whose home am I passing?)
     updateWalkNear();
   } else {
@@ -508,8 +512,10 @@ function initWalkControls() {
   $('btn-walk').addEventListener('click', () => {
     sfx.click();
     enterWalk();
+    const hint = $('look-hint');
+    if (hint) { hint.hidden = false; clearTimeout(initWalkControls.hintT); initWalkControls.hintT = setTimeout(() => { hint.hidden = true; }, 7000); }
     const phone = matchMedia('(pointer: coarse)').matches || window.innerWidth < 720;
-    pushNotice(phone ? 'You are on the street — joystick to walk, drag to look around.' : 'You are on the street. WASD or arrows to walk, Shift to run, drag to look around.', 'good');
+    pushNotice(phone ? 'You are on the street — joystick to walk, drag to look around.' : 'You are on the street. WASD to walk, Q/E or arrows to turn, Shift to run. Click to lock the mouse and look; 1-4 to emote.', 'good');
   });
   $('btn-exit-walk').addEventListener('click', () => { sfx.click(); exitWalk(); });
   $('btn-run').addEventListener('click', () => {
@@ -521,6 +527,55 @@ function initWalkControls() {
   });
   $('btn-rot-l').addEventListener('click', () => { orbitBy(-Math.PI / 4); sfx.click(); });
   $('btn-rot-r').addEventListener('click', () => { orbitBy(Math.PI / 4); sfx.click(); });
+  // any look input retires the first-time hint
+  const hint = $('look-hint');
+  if (hint) {
+    const retire = () => { hint.hidden = true; };
+    document.getElementById('game').addEventListener('pointerdown', retire, { once: false });
+  }
+}
+
+// ---------- walk minimap (pocket GPS: roads, deeds, you) ----------
+function drawWalkMap() {
+  const cv = $('walk-map');
+  if (!cv || !S.grid.length) return;
+  const now = performance.now();
+  if (drawWalkMap.last && now - drawWalkMap.last < 280) return;
+  drawWalkMap.last = now;
+  const c2 = cv.getContext('2d');
+  const N = cv.width, sc = N / MAP;
+  c2.clearRect(0, 0, N, N);
+  c2.fillStyle = '#141a26';
+  c2.fillRect(0, 0, N, N);
+  for (let y = 0; y < MAP; y++) for (let x = 0; x < MAP; x++) {
+    const tv = S.terrain[y] && S.terrain[y][x];
+    const g = S.grid[y][x];
+    if (tv && tv.w) c2.fillStyle = '#2e5d7a';
+    else if (g && (g.k === 'road' || g.k === 'bridge')) c2.fillStyle = '#93a7b1';
+    else if (g) c2.fillStyle = '#4d463a';
+    else continue;
+    c2.fillRect(x * sc, y * sc, sc + 0.5, sc + 0.5);
+  }
+  // deed markers: green = acquired, amber = TO-LET
+  for (const d of RESIDENTS.map(deedFor)) {
+    if (!d || !d.home) continue;
+    const [hx, hy] = d.home.split(',').map(Number);
+    c2.fillStyle = '#35d49a';
+    c2.fillRect(hx * sc - 1, hy * sc - 1, sc + 2, sc + 2);
+  }
+  // the four [NPC]s
+  c2.fillStyle = '#e8ecf4';
+  for (const w of getWalkers()) c2.fillRect(w.x * sc - 1, w.y * sc - 1, 2.4, 2.4);
+  // you: a heading arrow
+  const p = getPlayer(), v = getView();
+  c2.save();
+  c2.translate(p.x * sc, p.y * sc);
+  c2.rotate(v.yaw + Math.PI); // yaw 0 faces north (−y) → arrow up
+  c2.fillStyle = '#ffb03a';
+  c2.beginPath();
+  c2.moveTo(0, -5); c2.lineTo(3.4, 4); c2.lineTo(0, 2.2); c2.lineTo(-3.4, 4);
+  c2.closePath(); c2.fill();
+  c2.restore();
 }
 
 // ---------- tilt-shift miniature lens ----------

@@ -11,6 +11,8 @@ import { initUi, handleTap, tick as uiTick, setTool, getTool, updateSpeedIcon } 
 import { saveGame, loadGame, hasSave, clearSave } from './save.js';
 import { sfx } from './audio.js';
 import { BUILDINGS } from './data.js';
+import { initFpv } from './fpv.js';
+import { setLook } from './walk.js';
 
 const canvas = document.getElementById('game');
 const $ = (id) => document.getElementById(id);
@@ -70,7 +72,7 @@ canvas.addEventListener('pointermove', (e) => {
 });
 
 // ---------- keyboard: walker + UI ----------
-const WALK_KEYS = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ShiftLeft', 'ShiftRight'];
+const WALK_KEYS = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ShiftLeft', 'ShiftRight'];
 document.addEventListener('keydown', (e) => {
   if (walkActive() && WALK_KEYS.includes(e.code)) {
     setKey(e.code, true);
@@ -102,11 +104,13 @@ function loop(last) {
 
 function init() {
   initRender(canvas);
+  initFpv(canvas); // true first-person street camera (walk mode)
   camResize(canvas.clientWidth, canvas.clientHeight);
 
   initInput(canvas, {
     onTapTile: (tile, screen) => handleTap(tile, screen),
     onDragStart: () => { /* pan/orbit started; ghost will refresh on next move */ },
+    onLook: (dx, dy) => setLook(dx, dy), // street level: drag/lock = turn your head
   });
 
   initUi();
